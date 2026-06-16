@@ -1,0 +1,27 @@
+services:
+  fridayrun:
+    build:
+      context: .
+      args:
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_ORIGIN: ${APP_ORIGIN:-https://fridayrun.example.com}
+      SESSION_SECRET: ${SESSION_SECRET:-replace-with-a-long-random-secret}
+      SESSION_COOKIE_SECURE: "true"
+      TFN_ENCRYPTION_KEY: ${TFN_ENCRYPTION_KEY:-replace-with-32-byte-base64-or-64-char-hex-key}
+      DATABASE_URL: /app/data/fridayrun.sqlite
+      VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+      SUPER_ADMIN_FULL_NAME: ${SUPER_ADMIN_FULL_NAME:-FridayRun Admin}
+      SUPER_ADMIN_ADDRESS: ${SUPER_ADMIN_ADDRESS:-Update this address}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-admin@example.com}
+      SUPER_ADMIN_TFN: ${SUPER_ADMIN_TFN:-000000000}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-ChangeMe123!}
+    volumes:
+      - fridayrun-data:/app/data
+
+volumes:
+  fridayrun-data:
