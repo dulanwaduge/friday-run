@@ -1,14 +1,17 @@
 import { Repeat2, Save, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import type { EntryPayload, TravelEntry } from "../types";
+import type { EntryPayload, FrequentDestination, TravelEntry } from "../types";
 import { today } from "../lib/dates";
 import { MapsTripPicker } from "./MapsTripPicker";
+import { titleCase } from "../lib/text";
 
 type Props = {
   entry?: TravelEntry | null;
   busy?: boolean;
   onSubmit: (payload: EntryPayload) => Promise<void>;
   onCancel?: () => void;
+  draft?: EntryPayload | null;
+  destinations?: FrequentDestination[];
 };
 
 const blank: EntryPayload = {
@@ -22,20 +25,27 @@ const blank: EntryPayload = {
   vehicle: null,
   odometerStart: null,
   odometerEnd: null,
-  roundTrip: false
+  roundTrip: false,
+  tripCategory: "work",
+  commuteReason: null
 };
 
-export function EntryForm({ entry, busy, onSubmit, onCancel }: Props) {
+export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations = [] }: Props) {
   const [form, setForm] = useState<EntryPayload>(blank);
 
   useEffect(() => {
     if (entry) {
       const { id: _id, financialYear: _fy, createdAt: _created, updatedAt: _updated, ...payload } = entry;
       setForm(payload);
+    } else if (draft) {
+      setForm(draft);
     } else {
       setForm(blank);
     }
-  }, [entry]);
+  }, [draft, entry]);
+
+  const categoryFor = (address: string) => destinations.find((item) => item.address.trim().toLowerCase() === address.trim().toLowerCase())?.category;
+  const likelyCommute = (categoryFor(form.startLocation) === "home" && categoryFor(form.endLocation) === "office") || (categoryFor(form.startLocation) === "office" && categoryFor(form.endLocation) === "home");
 
   function update<K extends keyof EntryPayload>(key: K, value: EntryPayload[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -127,6 +137,15 @@ export function EntryForm({ entry, busy, onSubmit, onCancel }: Props) {
           }));
         }}
       />
+      {destinations.length ? <div className="grid gap-4 md:grid-cols-2">
+        <label className="label">Use saved start<select className="field" value="" onChange={(event) => update("startLocation", event.target.value)}><option value="">Choose a destination…</option>{destinations.map((item) => <option key={item.id} value={item.address}>{item.nickname} — {item.address}</option>)}</select></label>
+        <label className="label">Use saved end<select className="field" value="" onChange={(event) => update("endLocation", event.target.value)}><option value="">Choose a destination…</option>{destinations.map((item) => <option key={item.id} value={item.address}>{item.nickname} — {item.address}</option>)}</select></label>
+      </div> : null}
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="label">Trip Category<select className="field" value={form.tripCategory} onChange={(event) => update("tripCategory", event.target.value as EntryPayload["tripCategory"])}>{["work", "personal", "commute", "client_visit", "site_visit", "training", "supplier_visit"].map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></label>
+        {likelyCommute && form.tripCategory === "work" ? <label className="label text-amber-800 dark:text-amber-300">Reason this is work-related<input className="field" value={form.commuteReason ?? ""} onChange={(event) => update("commuteReason", event.target.value || null)} required /></label> : null}
+      </div>
+      {likelyCommute ? <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">This looks like travel between home and a regular workplace. Normal commuting is generally not tax deductible in Australia. You may continue, but work-related treatment requires a reason.</div> : null}
       <div className="grid gap-4 md:grid-cols-3">
         <label className="label">
           Odometer start
@@ -150,7 +169,7 @@ export function EntryForm({ entry, busy, onSubmit, onCancel }: Props) {
         ) : null}
         <button className="btn-primary" type="submit" disabled={busy}>
           <Save className="h-4 w-4" />
-          {entry ? "Update trip" : "Save trip"}
+          {entry ? "Update Trip" : "Save Trip"}
         </button>
       </div>
     </form>

@@ -45,10 +45,10 @@ export function AuthPanel({ onLogin, onSignup, error }: Props) {
         <form className="card space-y-4" onSubmit={submit}>
           <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
             <button className={`h-10 flex-1 rounded-md text-sm font-semibold ${mode === "login" ? "bg-white shadow-sm dark:bg-slate-950" : ""}`} type="button" onClick={() => setMode("login")}>
-              Sign in
+              Sign In
             </button>
             <button className={`h-10 flex-1 rounded-md text-sm font-semibold ${mode === "signup" ? "bg-white shadow-sm dark:bg-slate-950" : ""}`} type="button" onClick={() => setMode("signup")}>
-              Create account
+              Create Account
             </button>
           </div>
           {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
@@ -80,7 +80,7 @@ export function AuthPanel({ onLogin, onSignup, error }: Props) {
           ) : null}
           <button className="btn-primary w-full" type="submit" disabled={busy}>
             {mode === "login" ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-            {mode === "login" ? "Sign in" : "Create account"}
+            {mode === "login" ? "Sign In" : "Create Account"}
           </button>
         </form>
       </div>

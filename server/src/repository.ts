@@ -14,6 +14,8 @@ export type EntryPayload = {
   odometerStart?: number | null;
   odometerEnd?: number | null;
   roundTrip?: boolean;
+  tripCategory?: "work" | "personal" | "commute" | "client_visit" | "site_visit" | "training" | "supplier_visit";
+  commuteReason?: string | null;
 };
 
 export type EntryFilters = {
@@ -24,6 +26,7 @@ export type EntryFilters = {
   search?: string;
   limit?: number;
   offset?: number;
+  claimableOnly?: boolean;
 };
 
 function whereClause(filters: EntryFilters) {
@@ -50,6 +53,9 @@ function whereClause(filters: EntryFilters) {
   if (filters.search) {
     clauses.push("(start_location LIKE @search OR end_location LIKE @search OR notes LIKE @search OR vehicle LIKE @search)");
     params.search = `%${filters.search}%`;
+  }
+  if (filters.claimableOnly) {
+    clauses.push("trip_category NOT IN ('personal', 'commute')");
   }
 
   return {
@@ -92,10 +98,12 @@ export function createEntry(userId: string, payload: EntryPayload): TravelEntry 
   db.prepare(
     `INSERT INTO travel_entries (
       id, user_id, date, financial_year, start_location, end_location, kilometres,
-      calculated_kilometres, distance_source, notes, vehicle, odometer_start, odometer_end, round_trip
+      calculated_kilometres, distance_source, notes, vehicle, odometer_start, odometer_end, round_trip,
+      trip_category, commute_reason
     ) VALUES (
       @id, @userId, @date, @financialYear, @startLocation, @endLocation, @kilometres,
-      @calculatedKilometres, @distanceSource, @notes, @vehicle, @odometerStart, @odometerEnd, @roundTrip
+      @calculatedKilometres, @distanceSource, @notes, @vehicle, @odometerStart, @odometerEnd, @roundTrip,
+      @tripCategory, @commuteReason
     )`
   ).run({
     id,
@@ -107,7 +115,9 @@ export function createEntry(userId: string, payload: EntryPayload): TravelEntry 
     vehicle: payload.vehicle ?? null,
     odometerStart: payload.odometerStart ?? null,
     odometerEnd: payload.odometerEnd ?? null,
-    roundTrip: payload.roundTrip ? 1 : 0
+    roundTrip: payload.roundTrip ? 1 : 0,
+    tripCategory: payload.tripCategory ?? "work",
+    commuteReason: payload.commuteReason ?? null
   });
   return getEntry(id, userId)!;
 }
@@ -129,6 +139,8 @@ export function updateEntry(id: string, userId: string, payload: EntryPayload) {
         odometer_start = @odometerStart,
         odometer_end = @odometerEnd,
         round_trip = @roundTrip,
+        trip_category = @tripCategory,
+        commute_reason = @commuteReason,
         updated_at = datetime('now')
       WHERE id = @id AND user_id = @userId`
     )
@@ -142,7 +154,9 @@ export function updateEntry(id: string, userId: string, payload: EntryPayload) {
       vehicle: payload.vehicle ?? null,
       odometerStart: payload.odometerStart ?? null,
       odometerEnd: payload.odometerEnd ?? null,
-      roundTrip: payload.roundTrip ? 1 : 0
+      roundTrip: payload.roundTrip ? 1 : 0,
+      tripCategory: payload.tripCategory ?? "work",
+      commuteReason: payload.commuteReason ?? null
     });
   return result.changes ? getEntry(id, userId) : null;
 }

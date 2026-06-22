@@ -58,13 +58,33 @@ db.exec(`
     odometer_start REAL,
     odometer_end REAL,
     round_trip INTEGER NOT NULL DEFAULT 0,
+    trip_category TEXT NOT NULL DEFAULT 'work',
+    commute_reason TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS frequent_destinations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nickname TEXT NOT NULL,
+    address TEXT NOT NULL,
+    category TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE INDEX IF NOT EXISTS idx_travel_entries_date ON travel_entries(date);
   CREATE INDEX IF NOT EXISTS idx_travel_entries_financial_year ON travel_entries(financial_year);
   CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+  CREATE INDEX IF NOT EXISTS idx_frequent_destinations_user_id ON frequent_destinations(user_id);
 `);
 
 const columns = db.prepare("PRAGMA table_info(travel_entries)").all() as { name: string }[];
@@ -74,7 +94,14 @@ if (!columns.some((column) => column.name === "round_trip")) {
 if (!columns.some((column) => column.name === "user_id")) {
   db.prepare("ALTER TABLE travel_entries ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE").run();
 }
+if (!columns.some((column) => column.name === "trip_category")) {
+  db.prepare("ALTER TABLE travel_entries ADD COLUMN trip_category TEXT NOT NULL DEFAULT 'work'").run();
+}
+if (!columns.some((column) => column.name === "commute_reason")) {
+  db.prepare("ALTER TABLE travel_entries ADD COLUMN commute_reason TEXT").run();
+}
 db.prepare("CREATE INDEX IF NOT EXISTS idx_travel_entries_user_id ON travel_entries(user_id)").run();
+db.prepare("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('cents_per_kilometre_rate', '0.88')").run();
 
 const userCount = (db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number }).count;
 if (userCount === 0) {
@@ -117,6 +144,8 @@ export type TravelEntryRow = {
   odometer_start: number | null;
   odometer_end: number | null;
   round_trip: number;
+  trip_category: "work" | "personal" | "commute" | "client_visit" | "site_visit" | "training" | "supplier_visit";
+  commute_reason: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -136,6 +165,8 @@ export type TravelEntry = {
   odometerStart: number | null;
   odometerEnd: number | null;
   roundTrip: boolean;
+  tripCategory: TravelEntryRow["trip_category"];
+  commuteReason: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -156,6 +187,8 @@ export function mapEntry(row: TravelEntryRow): TravelEntry {
     odometerStart: row.odometer_start,
     odometerEnd: row.odometer_end,
     roundTrip: Boolean(row.round_trip),
+    tripCategory: row.trip_category,
+    commuteReason: row.commute_reason,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };

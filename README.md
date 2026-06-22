@@ -16,6 +16,11 @@ FridayRun is a responsive travel log for Australian work-related driving records
 - CSV, PDF, and Excel report exports for custom ranges, weeks, months, and financial years.
 - SQLite database for local development.
 - Docker setup for local deployment.
+- Tax deduction estimates by Australian financial year, including an admin-configurable rate, marginal tax benefit estimate, 5,000 km per-car method cap, and visible guidance disclaimer.
+- Saved frequent destinations with nicknames, categories, notes, and one-click form selection.
+- Return-trip suggestions with same-day/custom-date creation or distance recalculation.
+- Home-to-regular-workplace commute warnings and required reasons when recorded as work travel.
+- ATO audit package PDF containing taxpayer and vehicle details, financial-year totals, trip and odometer records, deduction estimate, timestamp, and compliance disclaimer.
 
 ## Architecture
 
@@ -66,6 +71,36 @@ CREATE TABLE travel_entries (
 - `DELETE /api/entries/:id`
 - `GET /api/financial-years`
 - `GET /api/reports?period=custom|week|month|financial-year&format=csv|xlsx|pdf`
+- `GET /api/deductions?financialYear=&marginalTaxRate=`
+- `GET|POST /api/destinations`
+- `PUT|DELETE /api/destinations/:id`
+- `GET /api/reports/audit-package?financialYear=&marginalTaxRate=`
+- `GET|PUT /api/admin/settings/tax` (super admin only)
+
+## Database migrations
+
+Migrations are additive and run automatically when the server starts. Existing databases receive the `trip_category` and `commute_reason` travel-entry columns plus the `frequent_destinations` and `app_settings` tables. Back up `data/fridayrun.sqlite` before deploying a new production build.
+
+## Tests
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+## Stage 1 verification
+
+1. Sign in and confirm the tax estimate shows current financial-year kilometres, estimated deduction, tax benefit, progress, and disclaimer.
+2. As a super admin, open Admin, change the dollars-per-kilometre rate, save it, then refresh the estimate.
+3. Save Home and Office frequent destinations and select them in the trip form.
+4. Record Home to Office as Work. Confirm the commute warning appears and a reason is required. Confirm Personal or Commute classification can still be saved without claiming it as work.
+5. Save a trip and use the return prompt to create it with the same kilometres and a chosen date. Use “Prepare and recalculate” to reverse the route in the trip form for Google Maps/manual recalculation.
+6. In Reports, choose a financial year and download the ATO audit package. Confirm it contains only the signed-in user's profile, vehicles, trip log, odometers, notes, estimate, export timestamp, and disclaimers.
+
+## Roadmap
+
+Stage 1 is implemented: deduction estimates, frequent destinations, return-trip assistance, commute warnings, and ATO audit packages. The next architecture phase is Stage 2: expenses/receipts (with future OCR), calendar evidence, assisted trip classification, accountant read-only access with explicit grants, and multi-driver fleet/business accounts. These should be introduced as user-owned domain modules and permission-scoped services rather than added to the travel-entry table.
 
 ## Local Setup
 

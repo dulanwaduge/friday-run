@@ -21,7 +21,9 @@ export const entryPayloadSchema = z
     vehicle: optionalText,
     odometerStart: z.coerce.number().min(0).optional().nullable(),
     odometerEnd: z.coerce.number().min(0).optional().nullable(),
-    roundTrip: z.boolean().default(false)
+    roundTrip: z.boolean().default(false),
+    tripCategory: z.enum(["work", "personal", "commute", "client_visit", "site_visit", "training", "supplier_visit"]).default("work"),
+    commuteReason: optionalText
   })
   .refine(
     (data) =>
@@ -33,6 +35,22 @@ export const entryPayloadSchema = z
       message: "Odometer end must be greater than or equal to odometer start"
     }
   );
+
+export const destinationSchema = z.object({
+  nickname: z.string().trim().min(1).max(80),
+  address: z.string().trim().min(5).max(300),
+  category: z.enum(["home", "office", "client", "supplier", "training", "job_site", "other"]),
+  notes: optionalText
+});
+
+export const taxSettingsSchema = z.object({
+  centsPerKilometreRate: z.coerce.number().min(0).max(5)
+});
+
+export const deductionQuerySchema = z.object({
+  financialYear: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+  marginalTaxRate: z.coerce.number().min(0).max(1).default(0.30)
+});
 
 export const rangeQuerySchema = z
   .object({

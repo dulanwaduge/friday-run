@@ -11,8 +11,9 @@ import {
   updateEntry
 } from "./repository.js";
 import { currentSummaryRanges, financialYearRange } from "./dateUtils.js";
-import { entryPayloadSchema, rangeQuerySchema, reportQuerySchema } from "./validation.js";
-import { buildCsv, buildPdf, buildXlsx } from "./reports.js";
+import { deductionQuerySchema, destinationSchema, entryPayloadSchema, rangeQuerySchema, reportQuerySchema, taxSettingsSchema } from "./validation.js";
+import { buildAuditPdf, buildCsv, buildPdf, buildXlsx } from "./reports.js";
+import { createDestination, deductionSummary, deleteDestination, getCentsPerKilometreRate, isLikelyCommute, listDestinations, setCentsPerKilometreRate, updateDestination } from "./stageOne.js";
 import {
   adminOnly,
   adminUpdateUserSchema,
@@ -140,6 +141,17 @@ router.delete("/admin/users/:id", authMiddleware, adminOnly, (req, res) => {
   res.status(204).send();
 });
 
+router.get("/admin/settings/tax", authMiddleware, adminOnly, (_req, res) => {
+  res.json({ centsPerKilometreRate: getCentsPerKilometreRate() });
+});
+
+router.put("/admin/settings/tax", authMiddleware, adminOnly, (req, res, next) => {
+  try {
+    const payload = taxSettingsSchema.parse(req.body);
+    res.json({ centsPerKilometreRate: setCentsPerKilometreRate(payload.centsPerKilometreRate) });
+  } catch (error) { next(error); }
+});
+
 router.use(authMiddleware);
 
 router.get("/entries", (req, res, next) => {
@@ -154,7 +166,12 @@ router.get("/entries", (req, res, next) => {
 router.post("/entries", (req, res, next) => {
   try {
     const payload = entryPayloadSchema.parse(req.body);
-    res.status(201).json(createEntry((req as AuthenticatedRequest).user!.id, payload));
+    const userId = (req as AuthenticatedRequest).user!.id;
+    if (payload.tripCategory === "work" && isLikelyCommute(userId, payload.startLocation, payload.endLocation) && !payload.commuteReason) {
+      res.status(400).json({ error: "Normal home-to-work commuting may not be deductible. Add a reason before recording this as work travel.", code: "COMMUTE_REASON_REQUIRED" });
+      return;
+    }
+    res.status(201).json(createEntry(userId, payload));
   } catch (error) {
     next(error);
   }
@@ -172,7 +189,12 @@ router.get("/entries/:id", (req, res) => {
 router.put("/entries/:id", (req, res, next) => {
   try {
     const payload = entryPayloadSchema.parse(req.body);
-    const entry = updateEntry(req.params.id, (req as AuthenticatedRequest).user!.id, payload);
+    const userId = (req as AuthenticatedRequest).user!.id;
+    if (payload.tripCategory === "work" && isLikelyCommute(userId, payload.startLocation, payload.endLocation) && !payload.commuteReason) {
+      res.status(400).json({ error: "Normal home-to-work commuting may not be deductible. Add a reason before recording this as work travel.", code: "COMMUTE_REASON_REQUIRED" });
+      return;
+    }
+    const entry = updateEntry(req.params.id, userId, payload);
     if (!entry) {
       res.status(404).json({ error: "Entry not found" });
       return;
@@ -214,6 +236,43 @@ router.get("/dashboard", (_req, res) => {
 
 router.get("/financial-years", (req, res) => {
   res.json(availableFinancialYears((req as AuthenticatedRequest).user!.id));
+});
+
+router.get("/destinations", (req, res) => res.json(listDestinations((req as AuthenticatedRequest).user!.id)));
+router.post("/destinations", (req, res, next) => {
+  try { res.status(201).json(createDestination((req as AuthenticatedRequest).user!.id, destinationSchema.parse(req.body))); } catch (error) { next(error); }
+});
+router.put("/destinations/:id", (req, res, next) => {
+  try {
+    const result = updateDestination(req.params.id, (req as AuthenticatedRequest).user!.id, destinationSchema.parse(req.body));
+    if (!result) { res.status(404).json({ error: "Destination not found" }); return; }
+    res.json(result);
+  } catch (error) { next(error); }
+});
+router.delete("/destinations/:id", (req, res) => {
+  if (!deleteDestination(req.params.id, (req as AuthenticatedRequest).user!.id)) { res.status(404).json({ error: "Destination not found" }); return; }
+  res.status(204).send();
+});
+
+router.get("/deductions", (req, res, next) => {
+  try {
+    const query = deductionQuerySchema.parse(req.query);
+    res.json(deductionSummary((req as AuthenticatedRequest).user!.id, query.financialYear, query.marginalTaxRate));
+  } catch (error) { next(error); }
+});
+
+router.get("/reports/audit-package", async (req, res, next) => {
+  try {
+    const query = deductionQuerySchema.parse(req.query);
+    const user = (req as AuthenticatedRequest).user!;
+    const summary = deductionSummary(user.id, query.financialYear, query.marginalTaxRate);
+    const range = financialYearRange(summary.financialYear);
+    const { entries } = listEntries({ ...range, limit: 500, userId: user.id });
+    const buffer = await buildAuditPdf({ entries, totalKilometres: summary.totalWorkKilometres, title: "FridayRun ATO Audit Package", ...range, user, deduction: summary, exportedAt: new Date().toISOString() });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="fridayrun-audit-package-${summary.financialYear}.pdf"`);
+    res.send(buffer);
+  } catch (error) { next(error); }
 });
 
 router.get("/reports", async (req, res, next) => {

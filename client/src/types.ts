@@ -12,6 +12,8 @@ export type TravelEntry = {
   odometerStart: number | null;
   odometerEnd: number | null;
   roundTrip: boolean;
+  tripCategory: "work" | "personal" | "commute" | "client_visit" | "site_visit" | "training" | "supplier_visit";
+  commuteReason: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -51,3 +53,29 @@ export type EntryPayload = Omit<
   TravelEntry,
   "id" | "financialYear" | "createdAt" | "updatedAt"
 >;
+
+export type FrequentDestination = {
+  id: string;
+  userId: string;
+  nickname: string;
+  address: string;
+  category: "home" | "office" | "client" | "supplier" | "training" | "job_site" | "other";
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DestinationPayload = Pick<FrequentDestination, "nickname" | "address" | "category" | "notes">;
+
+export type DeductionSummary = {
+  financialYear: string;
+  totalWorkKilometres: number;
+  eligibleKilometres: number;
+  vehicleBreakdown: { vehicle: string; kilometres: number; eligibleKilometres: number }[];
+  centsPerKilometreRate: number;
+  estimatedDeduction: number;
+  marginalTaxRate: number;
+  estimatedTaxBenefit: number;
+  financialYearProgress: number;
+  disclaimer: string;
+};

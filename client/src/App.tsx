@@ -7,8 +7,11 @@ import { ReportsPanel } from "./components/ReportsPanel";
 import { AuthPanel } from "./components/AuthPanel";
 import { ProfilePanel } from "./components/ProfilePanel";
 import { AdminPanel } from "./components/AdminPanel";
+import { TaxDeductionCalculator } from "./components/TaxDeductionCalculator";
+import { FrequentDestinations } from "./components/FrequentDestinations";
+import { ReturnTripPrompt } from "./components/ReturnTripPrompt";
 import { api } from "./lib/api";
-import type { DashboardData, EntryPayload, TravelEntry, User } from "./types";
+import type { DashboardData, EntryPayload, FrequentDestination, TravelEntry, User } from "./types";
 
 type View = "log" | "profile" | "admin";
 
@@ -25,6 +28,10 @@ export default function App() {
   const [endDate, setEndDate] = useState("");
   const [dark, setDark] = useState(false);
   const [error, setError] = useState("");
+  const [destinations, setDestinations] = useState<FrequentDestination[]>([]);
+  const [returnEntry, setReturnEntry] = useState<TravelEntry | null>(null);
+  const [draft, setDraft] = useState<EntryPayload | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -35,9 +42,10 @@ export default function App() {
   }, [endDate, search, startDate]);
 
   async function refresh() {
-    const [nextDashboard, list] = await Promise.all([api.dashboard(), api.entries(query)]);
+    const [nextDashboard, list, savedDestinations] = await Promise.all([api.dashboard(), api.entries(query), api.destinations()]);
     setDashboard(nextDashboard);
     setEntries(list.entries);
+    setDestinations(savedDestinations);
   }
 
   useEffect(() => {
@@ -69,9 +77,12 @@ export default function App() {
         await api.updateEntry(editing.id, payload);
         setEditing(null);
       } else {
-        await api.createEntry(payload);
+        const created = await api.createEntry(payload);
+        setReturnEntry(created);
+        setDraft(null);
       }
       await refresh();
+      setRefreshKey((value) => value + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save entry");
     } finally {
@@ -134,10 +145,10 @@ export default function App() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm dark:bg-slate-900 dark:text-slate-200">{user.fullName}</span>
-            <button className="icon-btn" type="button" onClick={() => setDark((value) => !value)} aria-label="Toggle dark mode">
+            <button className="icon-btn" type="button" onClick={() => setDark((value) => !value)} aria-label="Toggle Dark Mode">
               {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
-            <button className="icon-btn" type="button" onClick={logout} aria-label="Sign out">
+            <button className="icon-btn" type="button" onClick={logout} aria-label="Sign Out">
               <LogOut className="h-5 w-5" />
             </button>
           </div>
@@ -146,7 +157,7 @@ export default function App() {
         <nav className="mb-5 flex flex-wrap gap-2">
           <button className={view === "log" ? "btn-primary" : "btn-secondary"} type="button" onClick={() => setView("log")}>
             <Plus className="h-4 w-4" />
-            Travel log
+            Travel Log
           </button>
           <button className={view === "profile" ? "btn-primary" : "btn-secondary"} type="button" onClick={() => setView("profile")}>
             <UserCog className="h-4 w-4" />
@@ -163,6 +174,10 @@ export default function App() {
           <>
             {dashboard ? <Dashboard data={dashboard} /> : <div className="card">Loading dashboard...</div>}
 
+            <div className="mt-5"><TaxDeductionCalculator refreshKey={refreshKey} /></div>
+
+            <div className="mt-5"><FrequentDestinations destinations={destinations} onChange={refresh} /></div>
+
             <section className="mt-5 card">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="panel-title">{editing ? "Edit travel entry" : "Log a trip"}</h2>
@@ -172,8 +187,9 @@ export default function App() {
                 </div>
               </div>
               {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-              <EntryForm entry={editing} busy={busy} onSubmit={save} onCancel={editing ? () => setEditing(null) : undefined} />
+              <EntryForm entry={editing} draft={draft} destinations={destinations} busy={busy} onSubmit={save} onCancel={editing ? () => setEditing(null) : undefined} />
             </section>
+            {returnEntry ? <ReturnTripPrompt entry={returnEntry} onDismiss={() => setReturnEntry(null)} onCreate={async (payload) => { await save(payload); setReturnEntry(null); }} onPrepare={(payload) => { setDraft(payload); setReturnEntry(null); window.scrollTo({ top: 0, behavior: "smooth" }); }} /> : null}
 
             <section className="mt-5 space-y-4">
               <ReportsPanel />

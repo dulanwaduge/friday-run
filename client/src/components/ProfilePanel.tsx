@@ -49,7 +49,7 @@ export function ProfilePanel({ user, onUpdate, onPassword }: Props) {
         </label>
         <button className="btn-primary" type="submit">
           <Save className="h-4 w-4" />
-          Save details
+          Save Details
         </button>
       </form>
       <form className="card space-y-4" onSubmit={savePassword}>
@@ -65,7 +65,7 @@ export function ProfilePanel({ user, onUpdate, onPassword }: Props) {
         <p className="text-sm text-slate-500">Use at least 12 characters with uppercase, lowercase, number, and symbol characters.</p>
         <button className="btn-secondary" type="submit">
           <KeyRound className="h-4 w-4" />
-          Change password
+          Change Password
         </button>
       </form>
     </div>

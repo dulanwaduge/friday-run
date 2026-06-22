@@ -23,20 +23,22 @@ export function ReportsPanel() {
     await api.downloadReport(params);
   }
 
+  async function downloadAuditPackage() {
+    await api.downloadAuditPackage(financialYear, 0.30);
+  }
+
   return (
     <div className="card">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="panel-title">Reports</h2>
-        <button className="btn-primary" type="button" onClick={download}>
-          <Download className="h-4 w-4" />
-          Download
-        </button>
+        <div className="flex flex-wrap gap-2"><button className="btn-secondary" type="button" onClick={downloadAuditPackage}><Download className="h-4 w-4" />ATO Audit Package</button><button className="btn-primary" type="button" onClick={download}><Download className="h-4 w-4" />Download Report</button></div>
       </div>
+      <p className="mt-3 text-xs text-slate-500">The audit package is a record-keeping aid, not tax advice, and should be reviewed by a registered tax professional.</p>
       <div className="grid gap-4 md:grid-cols-5">
         <label className="label">
           Period
           <select className="field" value={period} onChange={(event) => setPeriod(event.target.value)}>
-            <option value="financial-year">Financial year</option>
+            <option value="financial-year">Financial Year</option>
             <option value="month">Month</option>
             <option value="week">Week</option>
             <option value="custom">Custom</option>

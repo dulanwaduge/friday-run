@@ -6,6 +6,7 @@ import type { User } from "../types";
 export function AdminPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState("");
+  const [taxRate, setTaxRate] = useState(0.88);
 
   async function load() {
     setUsers(await api.users());
@@ -13,6 +14,7 @@ export function AdminPanel() {
 
   useEffect(() => {
     load().catch((err) => setError(err.message));
+    api.taxSettings().then((settings) => setTaxRate(settings.centsPerKilometreRate)).catch((err) => setError(err.message));
   }, []);
 
   async function updateRole(user: User, role: User["role"]) {
@@ -27,7 +29,13 @@ export function AdminPanel() {
   }
 
   return (
-    <section className="card">
+    <div className="space-y-5"><section className="card">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div><h2 className="panel-title">Tax calculation settings</h2><p className="mt-1 text-sm text-slate-500">Global guidance rate used for deduction estimates and audit packages.</p></div>
+        <label className="label">Dollars per kilometre<input className="field w-40" type="number" min="0" max="5" step="0.01" value={taxRate} onChange={(event) => setTaxRate(Number(event.target.value))} /></label>
+        <button className="btn-primary" type="button" onClick={async () => { const settings = await api.updateTaxSettings(taxRate); setTaxRate(settings.centsPerKilometreRate); }}>Save Rate</button>
+      </div>
+    </section><section className="card">
       <div className="mb-4 flex items-center gap-2">
         <Shield className="h-5 w-5 text-gumleaf" />
         <h2 className="panel-title">User management</h2>
@@ -52,11 +60,11 @@ export function AdminPanel() {
                 <td className="px-4 py-3">
                   <select className="field min-w-36" value={user.role} onChange={(event) => updateRole(user, event.target.value as User["role"])}>
                     <option value="user">User</option>
-                    <option value="super_admin">Super admin</option>
+                    <option value="super_admin">Super Admin</option>
                   </select>
                 </td>
                 <td className="px-4 py-3">
-                  <button className="icon-btn danger" type="button" onClick={() => remove(user)} aria-label="Delete user" disabled={user.role === "super_admin"}>
+                  <button className="icon-btn danger" type="button" onClick={() => remove(user)} aria-label="Delete User" disabled={user.role === "super_admin"}>
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </td>
@@ -65,6 +73,6 @@ export function AdminPanel() {
           </tbody>
         </table>
       </div>
-    </section>
+    </section></div>
   );
 }

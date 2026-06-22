@@ -85,12 +85,13 @@ function MapsTripPickerEnabled({
   }
 
   function calculateDistance() {
-    if (!startPoint || !endPoint || !window.google) return;
+    if (!startLocation.trim() || !endLocation.trim() || !window.google) return;
+    setStatus("Calculating driving distance…");
     const service = new window.google.maps.DistanceMatrixService();
     service.getDistanceMatrix(
       {
-        origins: [startPoint],
-        destinations: [endPoint],
+        origins: [startPoint ?? startLocation.trim()],
+        destinations: [endPoint ?? endLocation.trim()],
         travelMode: window.google.maps.TravelMode.DRIVING,
         unitSystem: window.google.maps.UnitSystem.METRIC
       },
@@ -121,24 +122,44 @@ function MapsTripPickerEnabled({
       <div className="grid gap-3 md:grid-cols-2">
         <label className="label">
           Start destination
-          <Autocomplete onLoad={(ref) => (startRef.current = ref)} onPlaceChanged={() => readPlace(startRef, onStartChange, setStartPoint)}>
+          <Autocomplete
+            onLoad={(ref) => {
+              startRef.current = ref;
+              ref.setComponentRestrictions({ country: "au" });
+              ref.setFields(["formatted_address", "geometry", "name"]);
+            }}
+            onPlaceChanged={() => readPlace(startRef, onStartChange, setStartPoint)}
+          >
             <input
               className="field w-full"
               placeholder="Search start destination"
               value={startLocation}
-              onChange={(event) => onStartChange(event.target.value)}
+              onChange={(event) => {
+                setStartPoint(null);
+                onStartChange(event.target.value);
+              }}
               required
             />
           </Autocomplete>
         </label>
         <label className="label">
           End destination
-          <Autocomplete onLoad={(ref) => (endRef.current = ref)} onPlaceChanged={() => readPlace(endRef, onEndChange, setEndPoint)}>
+          <Autocomplete
+            onLoad={(ref) => {
+              endRef.current = ref;
+              ref.setComponentRestrictions({ country: "au" });
+              ref.setFields(["formatted_address", "geometry", "name"]);
+            }}
+            onPlaceChanged={() => readPlace(endRef, onEndChange, setEndPoint)}
+          >
             <input
               className="field w-full"
               placeholder="Search end destination"
               value={endLocation}
-              onChange={(event) => onEndChange(event.target.value)}
+              onChange={(event) => {
+                setEndPoint(null);
+                onEndChange(event.target.value);
+              }}
               required
             />
           </Autocomplete>
@@ -155,9 +176,9 @@ function MapsTripPickerEnabled({
       </GoogleMap>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="min-h-5 text-sm text-slate-500">{status}</span>
-        <button className="btn-secondary" type="button" onClick={calculateDistance} disabled={!startPoint || !endPoint}>
+        <button className="btn-secondary" type="button" onClick={calculateDistance} disabled={!startLocation.trim() || !endLocation.trim()}>
           <Route className="h-4 w-4" />
-          Calculate distance
+          Calculate Distance
         </button>
       </div>
     </div>

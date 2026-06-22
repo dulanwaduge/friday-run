@@ -35,10 +35,10 @@ export function EntriesTable({ entries, onEdit, onDelete }: Props) {
                 <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gumleaf">{formatKm(entry.kilometres)}</td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <div className="flex gap-2">
-                    <button className="icon-btn" type="button" onClick={() => onEdit(entry)} aria-label="Edit entry">
+                    <button className="icon-btn" type="button" onClick={() => onEdit(entry)} aria-label="Edit Entry">
                       <Edit2 className="h-4 w-4" />
                     </button>
-                    <button className="icon-btn danger" type="button" onClick={() => onDelete(entry)} aria-label="Delete entry">
+                    <button className="icon-btn danger" type="button" onClick={() => onDelete(entry)} aria-label="Delete Entry">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

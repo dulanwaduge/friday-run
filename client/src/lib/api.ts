@@ -1,4 +1,4 @@
-import type { AuthResponse, DashboardData, EntryPayload, TravelEntry, User } from "../types";
+import type { AuthResponse, DashboardData, DeductionSummary, DestinationPayload, EntryPayload, FrequentDestination, TravelEntry, User } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -43,6 +43,22 @@ export const api = {
   updateEntry: (id: string, payload: EntryPayload) =>
     request<TravelEntry>(`/entries/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteEntry: (id: string) => request<void>(`/entries/${id}`, { method: "DELETE" }),
+  destinations: () => request<FrequentDestination[]>("/destinations"),
+  createDestination: (payload: DestinationPayload) => request<FrequentDestination>("/destinations", { method: "POST", body: JSON.stringify(payload) }),
+  updateDestination: (id: string, payload: DestinationPayload) => request<FrequentDestination>(`/destinations/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteDestination: (id: string) => request<void>(`/destinations/${id}`, { method: "DELETE" }),
+  deduction: (financialYear: string, marginalTaxRate: number) => request<DeductionSummary>(`/deductions?financialYear=${encodeURIComponent(financialYear)}&marginalTaxRate=${marginalTaxRate}`),
+  taxSettings: () => request<{ centsPerKilometreRate: number }>("/admin/settings/tax"),
+  updateTaxSettings: (centsPerKilometreRate: number) => request<{ centsPerKilometreRate: number }>("/admin/settings/tax", { method: "PUT", body: JSON.stringify({ centsPerKilometreRate }) }),
+  downloadAuditPackage: (financialYear: string, marginalTaxRate: number) => api.downloadFile(`/reports/audit-package?financialYear=${encodeURIComponent(financialYear)}&marginalTaxRate=${marginalTaxRate}`, `fridayrun-audit-package-${financialYear}.pdf`),
+  downloadFile: async (path: string, fallbackFilename: string) => {
+    const response = await fetch(`${API_BASE}${path}`, { credentials: "include" });
+    if (!response.ok) { const detail = await response.json().catch(() => ({})); throw new Error(detail.error ?? "Download failed"); }
+    const blob = await response.blob();
+    const filename = response.headers.get("content-disposition")?.match(/filename="([^"]+)"/)?.[1] ?? fallbackFilename;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a"); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url);
+  },
   downloadReport: async (params: URLSearchParams) => {
     const response = await fetch(`${API_BASE}/reports?${params.toString()}`, {
       credentials: "include"
