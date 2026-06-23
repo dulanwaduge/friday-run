@@ -1,4 +1,4 @@
-import { Autocomplete, GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
+import { Autocomplete, useLoadScript } from "@react-google-maps/api";
 import { MapPin, Route } from "lucide-react";
 import { MutableRefObject, useRef, useState } from "react";
 
@@ -12,7 +12,6 @@ type Props = {
 };
 
 const libraries: ("places")[] = ["places"];
-const australia = { lat: -25.2744, lng: 133.7751 };
 
 export function MapsTripPicker({
   startLocation,
@@ -31,7 +30,7 @@ export function MapsTripPicker({
           Manual locations
         </div>
         <p className="mt-2 text-sm text-slate-500">
-          Add a Google Maps key to enable address autocomplete, map display, and automatic distance calculation.
+          Add a Google Maps key to enable address autocomplete and automatic distance calculation.
         </p>
       </div>
     );
@@ -84,6 +83,13 @@ function MapsTripPickerEnabled({
     });
   }
 
+  function distanceMessage(oneWayKm: number) {
+    const totalKm = roundTrip ? Math.round(oneWayKm * 2 * 10) / 10 : oneWayKm;
+    return roundTrip
+      ? `Calculated ${oneWayKm.toFixed(1)} km each way, ${totalKm.toFixed(1)} km total`
+      : `Calculated ${oneWayKm.toFixed(1)} km by road`;
+  }
+
   function calculateDistance() {
     if (!startLocation.trim() || !endLocation.trim() || !window.google) return;
     setStatus("Calculating driving distance…");
@@ -100,12 +106,7 @@ function MapsTripPickerEnabled({
         if (matrixStatus === "OK" && result?.status === "OK") {
           const oneWayKm = Math.round((result.distance.value / 1000) * 10) / 10;
           onDistanceCalculated(oneWayKm);
-          const totalKm = roundTrip ? Math.round(oneWayKm * 2 * 10) / 10 : oneWayKm;
-          setStatus(
-            roundTrip
-              ? `Calculated ${oneWayKm.toFixed(1)} km each way, ${totalKm.toFixed(1)} km total`
-              : `Calculated ${oneWayKm.toFixed(1)} km by road`
-          );
+          setStatus(distanceMessage(oneWayKm));
         } else {
           setStatus("Distance could not be calculated for those locations");
         }
@@ -114,7 +115,7 @@ function MapsTripPickerEnabled({
   }
 
   if (!isLoaded) {
-    return <div className="h-64 rounded-lg bg-slate-100" />;
+    return <div className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500">Loading Google address tools…</div>;
   }
 
   return (
@@ -165,15 +166,6 @@ function MapsTripPickerEnabled({
           </Autocomplete>
         </label>
       </div>
-      <GoogleMap
-        center={startPoint ?? endPoint ?? australia}
-        zoom={startPoint || endPoint ? 11 : 4}
-        mapContainerClassName="h-72 w-full rounded-lg border border-slate-200"
-        options={{ mapTypeControl: false, streetViewControl: false, fullscreenControl: false }}
-      >
-        {startPoint ? <Marker position={startPoint} label="A" /> : null}
-        {endPoint ? <Marker position={endPoint} label="B" /> : null}
-      </GoogleMap>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="min-h-5 text-sm text-slate-500">{status}</span>
         <button className="btn-secondary" type="button" onClick={calculateDistance} disabled={!startLocation.trim() || !endLocation.trim()}>
