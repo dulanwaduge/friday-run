@@ -9,12 +9,18 @@ process.env.TFN_ENCRYPTION_KEY = "stage-one-test-encryption-key-with-32-characte
 test("destinations remain user scoped and deduction estimates apply the 5,000 km cap", async () => {
   const { db } = await import("./db.js");
   const { createEntry } = await import("./repository.js");
-  const { createDestination, deductionSummary, listDestinations } = await import("./stageOne.js");
+  const { createDestination, createVehicle, deductionSummary, listDestinations, listVehicles } = await import("./stageOne.js");
   const user = db.prepare("SELECT id FROM users LIMIT 1").get() as { id: string };
 
   createDestination(user.id, { nickname: "Office", address: "1 Work Street, Melbourne VIC", category: "office" });
   assert.equal(listDestinations(user.id).length, 1);
   assert.equal(listDestinations("not-the-owner").length, 0);
+
+  createVehicle(user.id, { rego: "ABC123", state: "VIC" });
+  createVehicle(user.id, { rego: "ABC123", state: "VIC" });
+  createVehicle(user.id, { rego: "XYZ789", state: "NSW" });
+  assert.deepEqual(listVehicles(user.id).map((vehicle) => `${vehicle.rego}-${vehicle.state}`), ["ABC123-VIC", "XYZ789-NSW"]);
+  assert.equal(listVehicles("not-the-owner").length, 0);
 
   createEntry(user.id, {
     date: "2026-01-10",

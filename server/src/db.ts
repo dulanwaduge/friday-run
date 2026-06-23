@@ -75,6 +75,16 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS vehicles (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rego TEXT NOT NULL,
+    state TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id, rego, state)
+  );
+
   CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
@@ -85,6 +95,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_travel_entries_financial_year ON travel_entries(financial_year);
   CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_frequent_destinations_user_id ON frequent_destinations(user_id);
+  CREATE INDEX IF NOT EXISTS idx_vehicles_user_id ON vehicles(user_id);
 `);
 
 const columns = db.prepare("PRAGMA table_info(travel_entries)").all() as { name: string }[];

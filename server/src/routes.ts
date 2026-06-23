@@ -25,17 +25,22 @@ import {
   rangeQuerySchema,
   reportQuerySchema,
   taxSettingsSchema,
+  vehicleSchema,
 } from "./validation.js";
 import { buildAuditPdf, buildCsv, buildPdf, buildXlsx } from "./reports.js";
 import {
   createDestination,
+  createVehicle,
   deductionSummary,
   deleteDestination,
+  deleteVehicle,
   getCentsPerKilometreRate,
   isLikelyCommute,
   listDestinations,
+  listVehicles,
   setCentsPerKilometreRate,
   updateDestination,
+  updateVehicle,
 } from "./stageOne.js";
 import {
   adminOnly,
@@ -346,6 +351,47 @@ router.delete("/destinations/:id", (req, res) => {
     !deleteDestination(req.params.id, (req as AuthenticatedRequest).user!.id)
   ) {
     res.status(404).json({ error: "Destination not found" });
+    return;
+  }
+  res.status(204).send();
+});
+
+router.get("/vehicles", (req, res) =>
+  res.json(listVehicles((req as AuthenticatedRequest).user!.id)),
+);
+router.post("/vehicles", (req, res, next) => {
+  try {
+    res
+      .status(201)
+      .json(
+        createVehicle(
+          (req as AuthenticatedRequest).user!.id,
+          vehicleSchema.parse(req.body),
+        ),
+      );
+  } catch (error) {
+    next(error);
+  }
+});
+router.put("/vehicles/:id", (req, res, next) => {
+  try {
+    const result = updateVehicle(
+      req.params.id,
+      (req as AuthenticatedRequest).user!.id,
+      vehicleSchema.parse(req.body),
+    );
+    if (!result) {
+      res.status(404).json({ error: "Vehicle not found" });
+      return;
+    }
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+router.delete("/vehicles/:id", (req, res) => {
+  if (!deleteVehicle(req.params.id, (req as AuthenticatedRequest).user!.id)) {
+    res.status(404).json({ error: "Vehicle not found" });
     return;
   }
   res.status(204).send();

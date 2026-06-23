@@ -6,9 +6,16 @@ import { currentSummaryRanges, financialYearRange } from "./dateUtils.js";
 export type DestinationCategory = "home" | "office" | "client" | "supplier" | "training" | "job_site" | "other";
 export type DestinationPayload = { nickname: string; address: string; category: DestinationCategory; notes?: string | null };
 type DestinationRow = { id: string; user_id: string; nickname: string; address: string; category: DestinationCategory; notes: string | null; created_at: string; updated_at: string };
+export type VehicleState = "ACT" | "NSW" | "NT" | "QLD" | "SA" | "TAS" | "VIC" | "WA";
+export type VehiclePayload = { rego: string; state: VehicleState };
+type VehicleRow = { id: string; user_id: string; rego: string; state: VehicleState; created_at: string; updated_at: string };
 
 function mapDestination(row: DestinationRow) {
   return { id: row.id, userId: row.user_id, nickname: row.nickname, address: row.address, category: row.category, notes: row.notes, createdAt: row.created_at, updatedAt: row.updated_at };
+}
+
+function mapVehicle(row: VehicleRow) {
+  return { id: row.id, userId: row.user_id, rego: row.rego, state: row.state, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 
 export function listDestinations(userId: string) {
@@ -31,6 +38,30 @@ export function updateDestination(id: string, userId: string, payload: Destinati
 
 export function deleteDestination(id: string, userId: string) {
   return db.prepare("DELETE FROM frequent_destinations WHERE id = ? AND user_id = ?").run(id, userId).changes > 0;
+}
+
+export function listVehicles(userId: string) {
+  return (db.prepare("SELECT * FROM vehicles WHERE user_id = ? ORDER BY rego COLLATE NOCASE, state").all(userId) as VehicleRow[]).map(mapVehicle);
+}
+
+export function createVehicle(userId: string, payload: VehiclePayload) {
+  const existing = db.prepare("SELECT * FROM vehicles WHERE user_id = ? AND rego = ? AND state = ?").get(userId, payload.rego, payload.state) as VehicleRow | undefined;
+  if (existing) return mapVehicle(existing);
+  const id = nanoid();
+  db.prepare(`INSERT INTO vehicles (id, user_id, rego, state)
+    VALUES (@id, @userId, @rego, @state)`).run({ id, userId, ...payload });
+  return mapVehicle(db.prepare("SELECT * FROM vehicles WHERE id = ? AND user_id = ?").get(id, userId) as VehicleRow);
+}
+
+export function updateVehicle(id: string, userId: string, payload: VehiclePayload) {
+  const result = db.prepare(`UPDATE vehicles SET rego=@rego, state=@state, updated_at=datetime('now')
+    WHERE id=@id AND user_id=@userId`).run({ id, userId, ...payload });
+  if (!result.changes) return null;
+  return mapVehicle(db.prepare("SELECT * FROM vehicles WHERE id = ? AND user_id = ?").get(id, userId) as VehicleRow);
+}
+
+export function deleteVehicle(id: string, userId: string) {
+  return db.prepare("DELETE FROM vehicles WHERE id = ? AND user_id = ?").run(id, userId).changes > 0;
 }
 
 export function isLikelyCommute(userId: string, start: string, end: string) {

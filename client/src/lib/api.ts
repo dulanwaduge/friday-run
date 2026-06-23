@@ -1,4 +1,4 @@
-import type { AuthResponse, DashboardData, DeductionSummary, DestinationPayload, EntryPayload, FrequentDestination, TravelEntry, User } from "../types";
+import type { AuthResponse, DashboardData, DeductionSummary, DestinationPayload, EntryPayload, FrequentDestination, TravelEntry, User, Vehicle, VehiclePayload } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -47,6 +47,10 @@ export const api = {
   createDestination: (payload: DestinationPayload) => request<FrequentDestination>("/destinations", { method: "POST", body: JSON.stringify(payload) }),
   updateDestination: (id: string, payload: DestinationPayload) => request<FrequentDestination>(`/destinations/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteDestination: (id: string) => request<void>(`/destinations/${id}`, { method: "DELETE" }),
+  vehicles: () => request<Vehicle[]>("/vehicles"),
+  createVehicle: (payload: VehiclePayload) => request<Vehicle>("/vehicles", { method: "POST", body: JSON.stringify(payload) }),
+  updateVehicle: (id: string, payload: VehiclePayload) => request<Vehicle>(`/vehicles/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteVehicle: (id: string) => request<void>(`/vehicles/${id}`, { method: "DELETE" }),
   deduction: (financialYear: string, marginalTaxRate: number) => request<DeductionSummary>(`/deductions?financialYear=${encodeURIComponent(financialYear)}&marginalTaxRate=${marginalTaxRate}`),
   taxSettings: () => request<{ centsPerKilometreRate: number }>("/admin/settings/tax"),
   updateTaxSettings: (centsPerKilometreRate: number) => request<{ centsPerKilometreRate: number }>("/admin/settings/tax", { method: "PUT", body: JSON.stringify({ centsPerKilometreRate }) }),

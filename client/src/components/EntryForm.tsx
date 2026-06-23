@@ -1,6 +1,6 @@
 import { Repeat2, Save, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import type { EntryPayload, FrequentDestination, TravelEntry } from "../types";
+import type { EntryPayload, FrequentDestination, TravelEntry, Vehicle } from "../types";
 import { today } from "../lib/dates";
 import { MapsTripPicker } from "./MapsTripPicker";
 import { titleCase } from "../lib/text";
@@ -12,6 +12,7 @@ type Props = {
   onCancel?: () => void;
   draft?: EntryPayload | null;
   destinations?: FrequentDestination[];
+  vehicles?: Vehicle[];
 };
 
 const blank: EntryPayload = {
@@ -30,7 +31,7 @@ const blank: EntryPayload = {
   commuteReason: null
 };
 
-export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations = [] }: Props) {
+export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations = [], vehicles = [] }: Props) {
   const [form, setForm] = useState<EntryPayload>(blank);
 
   useEffect(() => {
@@ -118,7 +119,13 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
         </label>
         <label className="label">
           Vehicle
-          <input className="field" value={form.vehicle ?? ""} onChange={(event) => update("vehicle", event.target.value || null)} />
+          <select className="field" value={form.vehicle ?? ""} onChange={(event) => update("vehicle", event.target.value || null)}>
+            <option value="">Choose a vehicle…</option>
+            {vehicles.map((vehicle) => (
+              <option key={vehicle.id} value={vehicle.rego}>{vehicle.rego} — {vehicle.state}</option>
+            ))}
+            {form.vehicle && !vehicles.some((vehicle) => vehicle.rego === form.vehicle) ? <option value={form.vehicle}>{form.vehicle}</option> : null}
+          </select>
         </label>
       </div>
       <MapsTripPicker

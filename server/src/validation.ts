@@ -43,6 +43,13 @@ export const destinationSchema = z.object({
   notes: optionalText
 });
 
+export const vehicleSchema = z.object({
+  rego: z.string().trim().min(1).max(20).transform((value) => value.replace(/[^a-z0-9]/gi, "").toUpperCase()).refine((value) => value.length >= 1 && value.length <= 12, {
+    message: "Rego must contain 1 to 12 letters or numbers"
+  }),
+  state: z.enum(["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"])
+});
+
 export const taxSettingsSchema = z.object({
   centsPerKilometreRate: z.coerce.number().min(0).max(5)
 });

@@ -1,17 +1,23 @@
 import { FormEvent, useEffect, useState } from "react";
-import { KeyRound, Save } from "lucide-react";
-import type { User } from "../types";
+import { Car, KeyRound, Plus, Save, Trash2 } from "lucide-react";
+import type { User, Vehicle, VehiclePayload, VehicleState } from "../types";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 
 type Props = {
   user: User;
+  vehicles: Vehicle[];
   onUpdate: (payload: { fullName: string; address: string; email: string; tfn: string }) => Promise<void>;
   onPassword: (payload: { currentPassword: string; newPassword: string }) => Promise<void>;
+  onCreateVehicle: (payload: VehiclePayload) => Promise<void>;
+  onDeleteVehicle: (id: string) => Promise<void>;
 };
 
-export function ProfilePanel({ user, onUpdate, onPassword }: Props) {
+const australianStates: VehicleState[] = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
+
+export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVehicle, onDeleteVehicle }: Props) {
   const [profile, setProfile] = useState(user);
   const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "" });
+  const [vehicle, setVehicle] = useState<VehiclePayload>({ rego: "", state: "VIC" });
   const [message, setMessage] = useState("");
 
   useEffect(() => setProfile(user), [user]);
@@ -27,6 +33,18 @@ export function ProfilePanel({ user, onUpdate, onPassword }: Props) {
     await onPassword(passwords);
     setPasswords({ currentPassword: "", newPassword: "" });
     setMessage("Password changed");
+  }
+
+  async function saveVehicle(event: FormEvent) {
+    event.preventDefault();
+    await onCreateVehicle({ rego: vehicle.rego.trim().toUpperCase(), state: vehicle.state });
+    setVehicle({ rego: "", state: vehicle.state });
+    setMessage("Vehicle added");
+  }
+
+  async function removeVehicle(id: string) {
+    await onDeleteVehicle(id);
+    setMessage("Vehicle removed");
   }
 
   return (
@@ -68,6 +86,60 @@ export function ProfilePanel({ user, onUpdate, onPassword }: Props) {
           Change Password
         </button>
       </form>
+      <section className="card space-y-4 xl:col-span-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="panel-title">Vehicles</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Add vehicles once, then select the rego from the trip form.</p>
+          </div>
+          <Car className="h-5 w-5 text-gumleaf" />
+        </div>
+        <form className="grid gap-3 md:grid-cols-[1fr_180px_auto]" onSubmit={saveVehicle}>
+          <label className="label">
+            Rego
+            <input className="field uppercase" value={vehicle.rego} onChange={(event) => setVehicle({ ...vehicle, rego: event.target.value })} placeholder="ABC123" required />
+          </label>
+          <label className="label">
+            State
+            <select className="field" value={vehicle.state} onChange={(event) => setVehicle({ ...vehicle, state: event.target.value as VehicleState })}>
+              {australianStates.map((state) => <option key={state} value={state}>{state}</option>)}
+            </select>
+          </label>
+          <button className="btn-primary self-end" type="submit">
+            <Plus className="h-4 w-4" />
+            Add Vehicle
+          </button>
+        </form>
+        {vehicles.length ? (
+          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+            <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                <tr>
+                  <th className="px-4 py-3">Rego</th>
+                  <th className="px-4 py-3">State</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {vehicles.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-4 py-3 font-semibold">{item.rego}</td>
+                    <td className="px-4 py-3">{item.state}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button className="btn-secondary" type="button" onClick={() => removeVehicle(item.id)} aria-label={`Delete Vehicle ${item.rego}`}>
+                        <Trash2 className="h-4 w-4" />
+                        Delete Vehicle
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">No vehicles added yet.</p>
+        )}
+      </section>
     </div>
   );
 }

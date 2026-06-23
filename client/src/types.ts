@@ -67,6 +67,19 @@ export type FrequentDestination = {
 
 export type DestinationPayload = Pick<FrequentDestination, "nickname" | "address" | "category" | "notes">;
 
+export type VehicleState = "ACT" | "NSW" | "NT" | "QLD" | "SA" | "TAS" | "VIC" | "WA";
+
+export type Vehicle = {
+  id: string;
+  userId: string;
+  rego: string;
+  state: VehicleState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type VehiclePayload = Pick<Vehicle, "rego" | "state">;
+
 export type DeductionSummary = {
   financialYear: string;
   totalWorkKilometres: number;

@@ -6,6 +6,7 @@ FridayRun is a responsive travel log for Australian work-related driving records
 
 - Travel entry form with date, start/end destination, kilometres, vehicle, notes, and odometer readings.
 - Multi-user accounts with full name, Google Maps-assisted address entry, email, TFN, and strong password validation.
+- Account-managed vehicles with rego and Australian state/territory, surfaced as a vehicle dropdown on the trip form.
 - Super-admin user management dashboard.
 - HttpOnly cookie sessions so browser JavaScript does not store session tokens.
 - TFNs encrypted at rest with `TFN_ENCRYPTION_KEY`.
@@ -64,6 +65,16 @@ CREATE TABLE frequent_destinations (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE vehicles (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rego TEXT NOT NULL,
+  state TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, rego, state)
+);
 ```
 
 ## API Endpoints
@@ -89,12 +100,14 @@ CREATE TABLE frequent_destinations (
 - `GET /api/deductions?financialYear=&marginalTaxRate=`
 - `GET|POST /api/destinations`
 - `PUT|DELETE /api/destinations/:id`
+- `GET|POST /api/vehicles`
+- `PUT|DELETE /api/vehicles/:id`
 - `GET /api/reports/audit-package?financialYear=&marginalTaxRate=`
 - `GET|PUT /api/admin/settings/tax` (super admin only)
 
 ## Database migrations
 
-Migrations are additive and run automatically when the server starts. Existing databases receive the `trip_category` and `commute_reason` travel-entry columns plus the `frequent_destinations` and `app_settings` tables. Back up `data/fridayrun.sqlite` before deploying a new production build.
+Migrations are additive and run automatically when the server starts. Existing databases receive the `trip_category` and `commute_reason` travel-entry columns plus the `frequent_destinations`, `vehicles`, and `app_settings` tables. Back up `data/fridayrun.sqlite` before deploying a new production build.
 
 ## Tests
 
@@ -108,12 +121,13 @@ npm run build
 
 1. Sign in and confirm the tax estimate shows current financial-year kilometres, estimated deduction, tax benefit, progress, and disclaimer.
 2. As a super admin, open Admin, change the dollars-per-kilometre rate, save it, then refresh the estimate.
-3. Save Home and Office frequent destinations. Confirm Google Places suggests Australian addresses while typing, then select the saved locations in the trip form.
-4. Record Home to Office as Work. Confirm the commute warning appears and a reason is required. Confirm Personal or Commute classification can still be saved without claiming it as work.
-5. Enter or select start and end addresses. Confirm Calculate Distance enables once both fields contain text and works with typed, Google-selected, and saved addresses.
-6. Save a trip and use the return prompt to create it with the same kilometres and a chosen date. Use “Prepare And Recalculate” to reverse the route in the trip form for Google Maps/manual recalculation.
-7. In Reports, choose a financial year and download the ATO audit package. Confirm it contains only the signed-in user's profile, vehicles, trip log, odometers, notes, estimate, export timestamp, and disclaimers.
-8. Record several trips using the same vehicle rego with different casing, spaces, or hyphens. Confirm the ATO package lists that rego once and still lists genuinely different regos separately.
+3. In Account, add vehicles with a Rego and Australian State/Territory. Confirm they appear in the trip form's Vehicle dropdown.
+4. Save Home and Office frequent destinations. Confirm Google Places suggests Australian addresses while typing, then select the saved locations in the trip form.
+5. Record Home to Office as Work. Confirm the commute warning appears and a reason is required. Confirm Personal or Commute classification can still be saved without claiming it as work.
+6. Enter or select start and end addresses. Confirm Calculate Distance enables once both fields contain text and works with typed, Google-selected, and saved addresses.
+7. Save a trip and use the return prompt to create it with the same kilometres and a chosen date. Use “Prepare And Recalculate” to reverse the route in the trip form for Google Maps/manual recalculation.
+8. In Reports, choose a financial year and download the ATO audit package. Confirm it contains only the signed-in user's profile, vehicles, trip log, odometers, notes, estimate, export timestamp, and disclaimers.
+9. Record several trips using the same vehicle rego with different casing, spaces, or hyphens. Confirm the ATO package lists that rego once and still lists genuinely different regos separately.
 
 ## Roadmap
 

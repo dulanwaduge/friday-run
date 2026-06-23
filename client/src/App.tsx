@@ -11,7 +11,7 @@ import { TaxDeductionCalculator } from "./components/TaxDeductionCalculator";
 import { FrequentDestinations } from "./components/FrequentDestinations";
 import { ReturnTripPrompt } from "./components/ReturnTripPrompt";
 import { api } from "./lib/api";
-import type { DashboardData, EntryPayload, FrequentDestination, TravelEntry, User } from "./types";
+import type { DashboardData, EntryPayload, FrequentDestination, TravelEntry, User, Vehicle } from "./types";
 
 type View = "log" | "profile" | "admin";
 
@@ -29,6 +29,7 @@ export default function App() {
   const [dark, setDark] = useState(false);
   const [error, setError] = useState("");
   const [destinations, setDestinations] = useState<FrequentDestination[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [returnEntry, setReturnEntry] = useState<TravelEntry | null>(null);
   const [draft, setDraft] = useState<EntryPayload | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -42,10 +43,11 @@ export default function App() {
   }, [endDate, search, startDate]);
 
   async function refresh() {
-    const [nextDashboard, list, savedDestinations] = await Promise.all([api.dashboard(), api.entries(query), api.destinations()]);
+    const [nextDashboard, list, savedDestinations, savedVehicles] = await Promise.all([api.dashboard(), api.entries(query), api.destinations(), api.vehicles()]);
     setDashboard(nextDashboard);
     setEntries(list.entries);
     setDestinations(savedDestinations);
+    setVehicles(savedVehicles);
   }
 
   useEffect(() => {
@@ -117,6 +119,7 @@ export default function App() {
     setUser(null);
     setDashboard(null);
     setEntries([]);
+    setVehicles([]);
     setView("log");
   }
 
@@ -187,7 +190,7 @@ export default function App() {
                 </div>
               </div>
               {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-              <EntryForm entry={editing} draft={draft} destinations={destinations} busy={busy} onSubmit={save} onCancel={editing ? () => setEditing(null) : undefined} />
+              <EntryForm entry={editing} draft={draft} destinations={destinations} vehicles={vehicles} busy={busy} onSubmit={save} onCancel={editing ? () => setEditing(null) : undefined} />
             </section>
             {returnEntry ? <ReturnTripPrompt entry={returnEntry} onDismiss={() => setReturnEntry(null)} onCreate={async (payload) => { await save(payload); setReturnEntry(null); }} onPrepare={(payload) => { setDraft(payload); setReturnEntry(null); window.scrollTo({ top: 0, behavior: "smooth" }); }} /> : null}
 
@@ -228,6 +231,15 @@ export default function App() {
               setUser(nextUser);
             }}
             onPassword={api.changePassword}
+            vehicles={vehicles}
+            onCreateVehicle={async (payload) => {
+              await api.createVehicle(payload);
+              await refresh();
+            }}
+            onDeleteVehicle={async (id) => {
+              await api.deleteVehicle(id);
+              await refresh();
+            }}
           />
         ) : null}
 
