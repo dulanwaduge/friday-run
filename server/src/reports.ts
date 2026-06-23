@@ -38,7 +38,15 @@ export async function buildCsv(report: ReportPayload) {
     ["Email", report.user.email],
     ["TFN", report.user.tfn],
     [],
-    ["Date", "Start destination", "End destination", "Trip type", "Kilometres", "Vehicle", "Notes"]
+    [
+      "Date",
+      "Start destination",
+      "End destination",
+      "Trip type",
+      "Kilometres",
+      "Vehicle",
+      "Notes",
+    ],
   ];
   for (const entry of report.entries) {
     rows.push([
@@ -48,7 +56,7 @@ export async function buildCsv(report: ReportPayload) {
       tripType(entry),
       entry.kilometres,
       entry.vehicle ?? "",
-      entry.notes ?? ""
+      entry.notes ?? "",
     ]);
   }
   rows.push([], ["", "", "", "Total", report.totalKilometres, "", ""]);
@@ -59,7 +67,7 @@ export async function buildCsv(report: ReportPayload) {
           const text = String(value ?? "");
           return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
         })
-        .join(",")
+        .join(","),
     )
     .join("\n");
   return Buffer.from(csv);
@@ -76,7 +84,15 @@ export async function buildXlsx(report: ReportPayload) {
   sheet.addRow(["Email", report.user.email]);
   sheet.addRow(["TFN", report.user.tfn]);
   sheet.addRow([]);
-  sheet.addRow(["Date", "Start destination", "End destination", "Trip type", "Kilometres", "Vehicle", "Notes"]);
+  sheet.addRow([
+    "Date",
+    "Start destination",
+    "End destination",
+    "Trip type",
+    "Kilometres",
+    "Vehicle",
+    "Notes",
+  ]);
   for (const entry of report.entries) {
     sheet.addRow([
       entry.date,
@@ -85,7 +101,7 @@ export async function buildXlsx(report: ReportPayload) {
       tripType(entry),
       entry.kilometres,
       entry.vehicle ?? "",
-      entry.notes ?? ""
+      entry.notes ?? "",
     ]);
   }
   sheet.addRow([]);
@@ -106,7 +122,10 @@ export async function buildPdf(report: ReportPayload) {
   stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
 
   doc.fontSize(20).text(report.title);
-  doc.fontSize(10).fillColor("#4b5563").text(`${report.startDate} to ${report.endDate}`);
+  doc
+    .fontSize(10)
+    .fillColor("#4b5563")
+    .text(`${report.startDate} to ${report.endDate}`);
   doc.moveDown();
   doc.fillColor("#111827").fontSize(10);
   doc.text(`Full name: ${report.user.fullName}`);
@@ -114,16 +133,22 @@ export async function buildPdf(report: ReportPayload) {
   doc.text(`Email: ${report.user.email}`);
   doc.text(`TFN: ${report.user.tfn}`);
   doc.moveDown();
-  doc.fillColor("#111827").fontSize(12).text(`Total kilometres: ${report.totalKilometres.toFixed(2)} km`);
+  doc
+    .fillColor("#111827")
+    .fontSize(12)
+    .text(`Total kilometres: ${report.totalKilometres.toFixed(2)} km`);
   doc.moveDown();
 
   const widths = [66, 126, 126, 72, 52];
   let y = doc.y;
   const headers = ["Date", "Start", "End", "Trip type", "Km"];
   headers.forEach((header, index) => {
-    doc.font("Helvetica-Bold").fontSize(9).text(header, 40 + widths.slice(0, index).reduce((a, b) => a + b, 0), y, {
-      width: widths[index]
-    });
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(9)
+      .text(header, 40 + widths.slice(0, index).reduce((a, b) => a + b, 0), y, {
+        width: widths[index],
+      });
   });
   y += 22;
 
@@ -133,12 +158,23 @@ export async function buildPdf(report: ReportPayload) {
       doc.addPage();
       y = 40;
     }
-    const cells = [entry.date, entry.startLocation, entry.endLocation, tripType(entry), entry.kilometres.toFixed(2)];
+    const cells = [
+      entry.date,
+      entry.startLocation,
+      entry.endLocation,
+      tripType(entry),
+      entry.kilometres.toFixed(2),
+    ];
     cells.forEach((cell, index) => {
-      doc.text(cell, 40 + widths.slice(0, index).reduce((a, b) => a + b, 0), y, {
-        width: widths[index],
-        lineBreak: false
-      });
+      doc.text(
+        cell,
+        40 + widths.slice(0, index).reduce((a, b) => a + b, 0),
+        y,
+        {
+          width: widths[index],
+          lineBreak: false,
+        },
+      );
     });
     y += 20;
   }
@@ -149,8 +185,18 @@ export async function buildPdf(report: ReportPayload) {
 }
 
 function addAuditHeader(doc: PDFKit.PDFDocument, report: AuditPayload) {
-  doc.font("Helvetica-Bold").fontSize(19).fillColor("#111827").text(report.title);
-  doc.font("Helvetica").fontSize(9).fillColor("#4b5563").text(`Financial year ${report.deduction.financialYear} | Exported ${report.exportedAt}`);
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(19)
+    .fillColor("#111827")
+    .text(report.title);
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor("#4b5563")
+    .text(
+      `Financial year ${report.deduction.financialYear} | Exported ${report.exportedAt}`,
+    );
   doc.moveDown();
 }
 
@@ -175,7 +221,11 @@ export async function buildAuditPdf(report: AuditPayload) {
   stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
 
   addAuditHeader(doc, report);
-  doc.font("Helvetica-Bold").fontSize(12).fillColor("#111827").text("Taxpayer details");
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .fillColor("#111827")
+    .text("Taxpayer details");
   doc.font("Helvetica").fontSize(9).text(`Full name: ${report.user.fullName}`);
   doc.text(`Address: ${report.user.address}`);
   doc.text(`Email: ${report.user.email}`);
@@ -183,40 +233,110 @@ export async function buildAuditPdf(report: AuditPayload) {
   doc.moveDown();
 
   const vehicles = uniqueVehicleRegistrations(report.entries);
-  doc.font("Helvetica-Bold").fontSize(12).text("Vehicle and financial year summary");
-  doc.font("Helvetica").fontSize(9).text(`Vehicles: ${vehicles.length ? vehicles.join(", ") : "Not recorded"}`);
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text("Vehicle and financial year summary");
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .text(
+      `Vehicles: ${vehicles.length ? vehicles.join(", ") : "Not recorded"}`,
+    );
   doc.text(`Trips: ${report.entries.length}`);
   doc.text(`Total work kilometres: ${report.totalKilometres.toFixed(2)} km`);
-  doc.text(`Eligible kilometres after the 5,000 km per-car limit: ${report.deduction.eligibleKilometres.toFixed(2)} km`);
-  doc.text(`Configured rate: $${report.deduction.centsPerKilometreRate.toFixed(2)} per km`);
-  doc.text(`Estimated deduction: $${report.deduction.estimatedDeduction.toFixed(2)}`);
-  doc.text(`Estimated tax benefit: $${report.deduction.estimatedTaxBenefit.toFixed(2)}`);
+  doc.text(
+    `Eligible kilometres after the 5,000 km per-car limit: ${report.deduction.eligibleKilometres.toFixed(2)} km`,
+  );
+  doc.text(
+    `Configured rate: $${report.deduction.centsPerKilometreRate.toFixed(2)} per km`,
+  );
+  doc.text(
+    `Estimated deduction: $${report.deduction.estimatedDeduction.toFixed(2)}`,
+  );
+  doc.text(
+    `Estimated tax benefit: $${report.deduction.estimatedTaxBenefit.toFixed(2)}`,
+  );
   doc.moveDown();
-  doc.font("Helvetica-Oblique").fontSize(8).fillColor("#7c2d12").text(report.deduction.disclaimer);
-  doc.text("This package is for record-keeping and should be reviewed by a registered tax professional.");
+  doc
+    .font("Helvetica-Oblique")
+    .fontSize(8)
+    .fillColor("#7c2d12")
+    .text(report.deduction.disclaimer);
+  doc.text(
+    "This package is for record-keeping and should be reviewed by a registered tax professional.",
+  );
   doc.moveDown();
 
   doc.font("Helvetica-Bold").fontSize(12).fillColor("#111827").text("Trip log");
   let y = doc.y + 7;
   const widths = [58, 105, 105, 42, 56, 64, 80];
-  const headers = ["Date", "Start", "End", "Km", "Odo start", "Odo end", "Category / notes"];
+  const headers = [
+    "Date",
+    "Start",
+    "End",
+    "Km",
+    "Odo start",
+    "Odo end",
+    "Category / notes",
+  ];
   const drawHeader = () => {
-    headers.forEach((header, index) => doc.font("Helvetica-Bold").fontSize(7).text(header, 36 + widths.slice(0, index).reduce((a, b) => a + b, 0), y, { width: widths[index], lineBreak: false }));
+    headers.forEach((header, index) =>
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(7)
+        .text(
+          header,
+          36 + widths.slice(0, index).reduce((a, b) => a + b, 0),
+          y,
+          { width: widths[index], lineBreak: false },
+        ),
+    );
     y += 16;
   };
   drawHeader();
   for (const entry of report.entries) {
-    if (y > 775) { doc.addPage(); y = 36; drawHeader(); }
+    if (y > 775) {
+      doc.addPage();
+      y = 36;
+      drawHeader();
+    }
     const detail = `${entry.tripCategory.replaceAll("_", " ")}${entry.notes ? `: ${entry.notes}` : ""}`;
-    const cells = [entry.date, entry.startLocation, entry.endLocation, entry.kilometres.toFixed(1), entry.odometerStart?.toString() ?? "", entry.odometerEnd?.toString() ?? "", detail];
-    cells.forEach((cell, index) => doc.font("Helvetica").fontSize(6.8).text(cell, 36 + widths.slice(0, index).reduce((a, b) => a + b, 0), y, { width: widths[index], height: 22, ellipsis: true }));
+    const cells = [
+      entry.date,
+      entry.startLocation,
+      entry.endLocation,
+      entry.kilometres.toFixed(1),
+      entry.odometerStart?.toString() ?? "",
+      entry.odometerEnd?.toString() ?? "",
+      detail,
+    ];
+    cells.forEach((cell, index) =>
+      doc
+        .font("Helvetica")
+        .fontSize(6.8)
+        .text(cell, 36 + widths.slice(0, index).reduce((a, b) => a + b, 0), y, {
+          width: widths[index],
+          height: 22,
+          ellipsis: true,
+        }),
+    );
     y += 24;
   }
 
   const pages = doc.bufferedPageRange();
   for (let index = 0; index < pages.count; index += 1) {
     doc.switchToPage(index);
-    doc.font("Helvetica").fontSize(7).fillColor("#6b7280").text(`FridayRun record-keeping package | Page ${index + 1} of ${pages.count}`, 36, 806, { align: "center", width: 523 });
+    doc
+      .font("Helvetica")
+      .fontSize(7)
+      .fillColor("#6b7280")
+      .text(
+        `FridayRun record-keeping package | Page ${index + 1} of ${pages.count}`,
+        36,
+        806,
+        { align: "center", width: 523 },
+      );
   }
   doc.end();
   await new Promise<void>((resolve) => stream.on("end", resolve));

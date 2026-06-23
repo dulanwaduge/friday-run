@@ -1,5 +1,11 @@
 import { nanoid } from "nanoid";
-import { db, enrichFinancialYear, mapEntry, TravelEntry, TravelEntryRow } from "./db.js";
+import {
+  db,
+  enrichFinancialYear,
+  mapEntry,
+  TravelEntry,
+  TravelEntryRow,
+} from "./db.js";
 import { financialYearRange } from "./dateUtils.js";
 
 export type EntryPayload = {
@@ -14,7 +20,14 @@ export type EntryPayload = {
   odometerStart?: number | null;
   odometerEnd?: number | null;
   roundTrip?: boolean;
-  tripCategory?: "work" | "personal" | "commute" | "client_visit" | "site_visit" | "training" | "supplier_visit";
+  tripCategory?:
+    | "work"
+    | "personal"
+    | "commute"
+    | "client_visit"
+    | "site_visit"
+    | "training"
+    | "supplier_visit";
   commuteReason?: string | null;
 };
 
@@ -51,7 +64,9 @@ function whereClause(filters: EntryFilters) {
     params.endDate = filters.endDate;
   }
   if (filters.search) {
-    clauses.push("(start_location LIKE @search OR end_location LIKE @search OR notes LIKE @search OR vehicle LIKE @search)");
+    clauses.push(
+      "(start_location LIKE @search OR end_location LIKE @search OR notes LIKE @search OR vehicle LIKE @search)",
+    );
     params.search = `%${filters.search}%`;
   }
   if (filters.claimableOnly) {
@@ -60,7 +75,7 @@ function whereClause(filters: EntryFilters) {
 
   return {
     sql: clauses.length ? `WHERE ${clauses.join(" AND ")}` : "",
-    params
+    params,
   };
 }
 
@@ -70,29 +85,36 @@ export function listEntries(filters: EntryFilters = {}) {
   const offset = filters.offset ?? 0;
   const rows = db
     .prepare(
-      `SELECT * FROM travel_entries ${sql} ORDER BY date DESC, created_at DESC LIMIT @limit OFFSET @offset`
+      `SELECT * FROM travel_entries ${sql} ORDER BY date DESC, created_at DESC LIMIT @limit OFFSET @offset`,
     )
     .all({ ...params, limit, offset }) as TravelEntryRow[];
-  const total = db.prepare(`SELECT COUNT(*) as count FROM travel_entries ${sql}`).get(params) as {
+  const total = db
+    .prepare(`SELECT COUNT(*) as count FROM travel_entries ${sql}`)
+    .get(params) as {
     count: number;
   };
   return {
     entries: rows.map(mapEntry),
-    total: total.count
+    total: total.count,
   };
 }
 
 export function getEntry(id: string, userId?: string) {
-  const row = db.prepare(`SELECT * FROM travel_entries WHERE id = @id${userId ? " AND user_id = @userId" : ""}`).get({
-    id,
-    userId
-  }) as
-    | TravelEntryRow
-    | undefined;
+  const row = db
+    .prepare(
+      `SELECT * FROM travel_entries WHERE id = @id${userId ? " AND user_id = @userId" : ""}`,
+    )
+    .get({
+      id,
+      userId,
+    }) as TravelEntryRow | undefined;
   return row ? mapEntry(row) : null;
 }
 
-export function createEntry(userId: string, payload: EntryPayload): TravelEntry {
+export function createEntry(
+  userId: string,
+  payload: EntryPayload,
+): TravelEntry {
   const id = nanoid();
   const financialYear = enrichFinancialYear(payload.date);
   db.prepare(
@@ -104,7 +126,7 @@ export function createEntry(userId: string, payload: EntryPayload): TravelEntry 
       @id, @userId, @date, @financialYear, @startLocation, @endLocation, @kilometres,
       @calculatedKilometres, @distanceSource, @notes, @vehicle, @odometerStart, @odometerEnd, @roundTrip,
       @tripCategory, @commuteReason
-    )`
+    )`,
   ).run({
     id,
     userId,
@@ -117,7 +139,7 @@ export function createEntry(userId: string, payload: EntryPayload): TravelEntry 
     odometerEnd: payload.odometerEnd ?? null,
     roundTrip: payload.roundTrip ? 1 : 0,
     tripCategory: payload.tripCategory ?? "work",
-    commuteReason: payload.commuteReason ?? null
+    commuteReason: payload.commuteReason ?? null,
   });
   return getEntry(id, userId)!;
 }
@@ -142,7 +164,7 @@ export function updateEntry(id: string, userId: string, payload: EntryPayload) {
         trip_category = @tripCategory,
         commute_reason = @commuteReason,
         updated_at = datetime('now')
-      WHERE id = @id AND user_id = @userId`
+      WHERE id = @id AND user_id = @userId`,
     )
     .run({
       id,
@@ -156,19 +178,25 @@ export function updateEntry(id: string, userId: string, payload: EntryPayload) {
       odometerEnd: payload.odometerEnd ?? null,
       roundTrip: payload.roundTrip ? 1 : 0,
       tripCategory: payload.tripCategory ?? "work",
-      commuteReason: payload.commuteReason ?? null
+      commuteReason: payload.commuteReason ?? null,
     });
   return result.changes ? getEntry(id, userId) : null;
 }
 
 export function deleteEntry(id: string, userId: string) {
-  return db.prepare("DELETE FROM travel_entries WHERE id = ? AND user_id = ?").run(id, userId).changes > 0;
+  return (
+    db
+      .prepare("DELETE FROM travel_entries WHERE id = ? AND user_id = ?")
+      .run(id, userId).changes > 0
+  );
 }
 
 export function totalKilometres(filters: EntryFilters = {}) {
   const { sql, params } = whereClause(filters);
   const row = db
-    .prepare(`SELECT COALESCE(SUM(kilometres), 0) as kilometres, COUNT(*) as trips FROM travel_entries ${sql}`)
+    .prepare(
+      `SELECT COALESCE(SUM(kilometres), 0) as kilometres, COUNT(*) as trips FROM travel_entries ${sql}`,
+    )
     .get(params) as { kilometres: number; trips: number };
   return row;
 }
@@ -180,7 +208,7 @@ export function chartSeries(filters: EntryFilters = {}) {
       `SELECT substr(date, 1, 7) as period, ROUND(SUM(kilometres), 2) as kilometres
        FROM travel_entries ${sql}
        GROUP BY substr(date, 1, 7)
-       ORDER BY period ASC`
+       ORDER BY period ASC`,
     )
     .all(params) as { period: string; kilometres: number }[];
 }
@@ -189,6 +217,12 @@ export function availableFinancialYears(userId?: string) {
   const filters = userId ? { userId } : {};
   const { sql, params } = whereClause(filters);
   return db
-    .prepare(`SELECT financial_year as financialYear, ROUND(SUM(kilometres), 2) as kilometres, COUNT(*) as trips FROM travel_entries ${sql} GROUP BY financial_year ORDER BY financial_year DESC`)
-    .all(params) as { financialYear: string; kilometres: number; trips: number }[];
+    .prepare(
+      `SELECT financial_year as financialYear, ROUND(SUM(kilometres), 2) as kilometres, COUNT(*) as trips FROM travel_entries ${sql} GROUP BY financial_year ORDER BY financial_year DESC`,
+    )
+    .all(params) as {
+    financialYear: string;
+    kilometres: number;
+    trips: number;
+  }[];
 }
