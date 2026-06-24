@@ -173,6 +173,15 @@ SUPER_ADMIN_PASSWORD=ChangeMe123!
 
 Set these before the first production start. Passwords must be at least 12 characters and include uppercase, lowercase, number, and symbol characters.
 
+To reset or create a login-ready super admin for the active database, stop the service and run:
+
+```bash
+npm run build
+SUPER_ADMIN_EMAIL=admin@example.com SUPER_ADMIN_PASSWORD='ResetAdmin123!' npm run admin:reset
+```
+
+The command prints the exact SQLite database path, email, role, user count, and whether the saved password hash verifies. It also clears existing sessions so the next login starts cleanly.
+
 ## Reports
 
 Reports include the user's full name, address, email, TFN, date, start destination, end destination, trip type, kilometres travelled, vehicle, notes, and the total kilometres for the selected period. CSV, PDF, and Excel reports include the user details at the top of the report.

@@ -19,6 +19,7 @@ const resolvedPath = path.isAbsolute(databaseUrl)
 
 fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
 
+export const databasePath = resolvedPath;
 export const db = new Database(resolvedPath);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
