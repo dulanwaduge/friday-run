@@ -21,6 +21,7 @@ APP_ORIGIN=https://fridayrun.example.com
 SESSION_SECRET=<long random secret>
 SESSION_COOKIE_SECURE=true
 TFN_ENCRYPTION_KEY=<32-byte base64 key or 64-character hex key>
+ALLOW_PUBLIC_SIGNUP=false
 SUPER_ADMIN_FULL_NAME=<your name>
 SUPER_ADMIN_ADDRESS=<your address>
 SUPER_ADMIN_EMAIL=<your admin email>
@@ -35,6 +36,8 @@ openssl rand -base64 32
 ```
 
 Keep `TFN_ENCRYPTION_KEY` stable. If it changes, previously stored TFNs cannot be decrypted.
+
+In production, FridayRun refuses to start unless `SESSION_SECRET`, `TFN_ENCRYPTION_KEY`, and `SUPER_ADMIN_PASSWORD` are explicitly set. Keep public signup disabled unless you intentionally want open account creation.
 
 ## Apache Reverse Proxy
 

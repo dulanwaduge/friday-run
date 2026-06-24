@@ -17,6 +17,21 @@ const resolvedPath = path.isAbsolute(databaseUrl)
   ? databaseUrl
   : path.resolve(process.cwd(), databaseUrl);
 
+function assertProductionSecret(name: string) {
+  const value = process.env[name];
+  if (process.env.NODE_ENV === "production" && (!value || value.length < 32 || value.startsWith("replace-with"))) {
+    throw new Error(`${name} must be set to a strong explicit value in production.`);
+  }
+}
+
+if (process.env.NODE_ENV === "production") {
+  assertProductionSecret("SESSION_SECRET");
+  assertProductionSecret("TFN_ENCRYPTION_KEY");
+  if (!process.env.SUPER_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD === "ChangeMe123!") {
+    throw new Error("SUPER_ADMIN_PASSWORD must be set to a strong explicit value in production.");
+  }
+}
+
 fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
 
 export const databasePath = resolvedPath;

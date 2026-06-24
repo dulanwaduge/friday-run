@@ -1,6 +1,7 @@
 import { Autocomplete, useLoadScript } from "@react-google-maps/api";
 import { MapPin, Route } from "lucide-react";
 import { MutableRefObject, useRef, useState } from "react";
+import { usePublicConfig } from "../lib/publicConfig";
 
 type Props = {
   startLocation: string;
@@ -21,7 +22,13 @@ export function MapsTripPicker({
   onEndChange,
   onDistanceCalculated
 }: Props) {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+  const config = usePublicConfig();
+  const apiKey = config?.googleMapsApiKey;
+
+  if (!config) {
+    return <div className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500">Loading Google address tools…</div>;
+  }
+
   if (!apiKey) {
     return (
       <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">

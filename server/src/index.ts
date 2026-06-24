@@ -21,7 +21,25 @@ const allowedOrigins = (process.env.APP_ORIGIN ?? "http://localhost:5173,http://
   .filter(Boolean);
 
 app.set("trust proxy", 1);
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        connectSrc: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+        fontSrc: ["'self'", "data:"],
+        formAction: ["'self'"],
+        frameAncestors: ["'self'"],
+        imgSrc: ["'self'", "data:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+        objectSrc: ["'none'"],
+        scriptSrc: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+        scriptSrcAttr: ["'none'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"]
+      }
+    }
+  })
+);
 app.use(
   cors({
     credentials: true,

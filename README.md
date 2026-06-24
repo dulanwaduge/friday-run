@@ -159,6 +159,8 @@ VITE_GOOGLE_MAPS_API_KEY=your_key_here
 
 Places suggestions are restricted to Australian addresses. The app still works without a key, using manual destinations and manual kilometres. When Maps is enabled, Calculate Distance can resolve typed address text as well as coordinates returned by Places autocomplete.
 
+The Google Maps key is served to the browser from `/api/config/public` at runtime. On self-hosted installs, keep `VITE_GOOGLE_MAPS_API_KEY` in the server `.env`, restart the service after changing it, and the frontend will pick it up without needing the key baked into the Vite build.
+
 ## Super Admin
 
 On first startup, FridayRun creates a super-admin account from these environment variables:
@@ -173,6 +175,8 @@ SUPER_ADMIN_PASSWORD=ChangeMe123!
 
 Set these before the first production start. Passwords must be at least 12 characters and include uppercase, lowercase, number, and symbol characters.
 
+In production, `SESSION_SECRET`, `TFN_ENCRYPTION_KEY`, and `SUPER_ADMIN_PASSWORD` must be explicitly set or the server refuses to start. Public signup is disabled by default in production; set `ALLOW_PUBLIC_SIGNUP=true` only if you intentionally want anyone who can reach the site to create an account.
+
 To reset or create a login-ready super admin for the active database, stop the service and run:
 
 ```bash
@@ -181,6 +185,8 @@ SUPER_ADMIN_EMAIL=admin@example.com SUPER_ADMIN_PASSWORD='ResetAdmin123!' npm ru
 ```
 
 The command prints the exact SQLite database path, email, role, user count, and whether the saved password hash verifies. It also clears existing sessions so the next login starts cleanly.
+
+For privacy, normal API responses return masked TFNs. Full TFNs are only decrypted for profile/report flows that explicitly need them, such as report exports.
 
 ## Reports
 
@@ -204,5 +210,6 @@ See [Self-hosting FridayRun with Apache and Cloudflare Tunnel](docs/self-hosting
 
 - Put the app behind HTTPS before using Google Maps in production.
 - Use a restricted Google Maps browser key.
+- Keep public signup disabled unless you have a separate approval process.
 - TFNs are sensitive personal information. Use HTTPS, restricted admin access, encrypted backups, and database encryption where appropriate.
 - SQLite is suitable for local/small deployments. For larger multi-user production, migrate the repository layer to PostgreSQL.

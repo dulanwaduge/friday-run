@@ -15,12 +15,16 @@ function readArg(name: string) {
 }
 
 function optionsFromEnvironment(): ResetOptions {
+  const password = readArg("password") ?? process.env.SUPER_ADMIN_PASSWORD;
+  if (!password) {
+    throw new Error("Provide an admin password with SUPER_ADMIN_PASSWORD or --password=...");
+  }
   return {
     fullName: readArg("full-name") ?? process.env.SUPER_ADMIN_FULL_NAME ?? "FridayRun Admin",
     address: readArg("address") ?? process.env.SUPER_ADMIN_ADDRESS ?? "Update this address",
     email: (readArg("email") ?? process.env.SUPER_ADMIN_EMAIL ?? "admin@example.com").trim().toLowerCase(),
     tfn: readArg("tfn") ?? process.env.SUPER_ADMIN_TFN ?? "000000000",
-    password: readArg("password") ?? process.env.SUPER_ADMIN_PASSWORD ?? "ChangeMe123!"
+    password
   };
 }
 

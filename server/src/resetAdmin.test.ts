@@ -8,7 +8,7 @@ process.env.TFN_ENCRYPTION_KEY = "admin-reset-test-encryption-key-with-32-charac
 
 test("super admin reset creates a login-ready super admin and can update the password", async () => {
   const { db } = await import("./db.js");
-  const { findUserByEmail, verifyPassword } = await import("./auth.js");
+  const { findUserByEmail, toPublicUser, updateUserProfile, verifyPassword } = await import("./auth.js");
   const { resetSuperAdmin } = await import("./resetAdmin.js");
 
   const first = resetSuperAdmin({
@@ -26,6 +26,16 @@ test("super admin reset creates a login-ready super admin and can update the pas
   assert.ok(user);
   assert.equal(user.role, "super_admin");
   assert.equal(verifyPassword("ResetAdmin123!", user.password_hash), true);
+  assert.equal(toPublicUser(user).tfn, "•••••000");
+  assert.equal(toPublicUser(user, { includeSensitiveTfn: true }).tfn, "000000000");
+
+  const preserved = updateUserProfile(user.id, {
+    fullName: "Updated Admin",
+    address: "2 Admin Street",
+    email: "admin@example.com"
+  });
+  assert.equal(preserved?.tfn, "•••••000");
+  assert.equal(toPublicUser(findUserByEmail("admin@example.com")!, { includeSensitiveTfn: true }).tfn, "000000000");
 
   resetSuperAdmin({
     fullName: "FridayRun Admin",

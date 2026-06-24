@@ -3,13 +3,14 @@ import type { AuthResponse, DashboardData, DeductionSummary, DestinationPayload,
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = init?.method?.toUpperCase() ?? "GET";
+  const headers = new Headers(init?.headers);
+  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  if (!["GET", "HEAD", "OPTIONS"].includes(method)) headers.set("X-FridayRun-CSRF", "1");
   const response = await fetch(`${API_BASE}${path}`, {
+    ...init,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers
-    },
-    ...init
+    headers
   });
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}));
@@ -28,12 +29,12 @@ export const api = {
     request<AuthResponse>("/auth/signup", { method: "POST", body: JSON.stringify(payload) }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   me: () => request<User>("/me"),
-  updateMe: (payload: { fullName: string; address: string; email: string; tfn: string }) =>
+  updateMe: (payload: { fullName: string; address: string; email: string; tfn?: string }) =>
     request<User>("/me", { method: "PUT", body: JSON.stringify(payload) }),
   changePassword: (payload: { currentPassword: string; newPassword: string }) =>
     request<void>("/me/password", { method: "PUT", body: JSON.stringify(payload) }),
   users: () => request<User[]>("/admin/users"),
-  updateUser: (id: string, payload: { fullName: string; address: string; email: string; tfn: string; role: User["role"] }) =>
+  updateUser: (id: string, payload: { fullName: string; address: string; email: string; tfn?: string; role: User["role"] }) =>
     request<User>(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteUser: (id: string) => request<void>(`/admin/users/${id}`, { method: "DELETE" }),
   dashboard: () => request<DashboardData>("/dashboard"),
