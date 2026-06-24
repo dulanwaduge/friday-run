@@ -6,7 +6,7 @@ import { AddressAutocomplete } from "./AddressAutocomplete";
 type Props = {
   user: User;
   vehicles: Vehicle[];
-  onUpdate: (payload: { fullName: string; address: string; email: string; tfn: string }) => Promise<void>;
+  onUpdate: (payload: { fullName: string; address: string; email: string; tfn?: string }) => Promise<void>;
   onPassword: (payload: { currentPassword: string; newPassword: string }) => Promise<void>;
   onCreateVehicle: (payload: VehiclePayload) => Promise<void>;
   onDeleteVehicle: (id: string) => Promise<void>;
@@ -24,7 +24,13 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
 
   async function saveProfile(event: FormEvent) {
     event.preventDefault();
-    await onUpdate(profile);
+    const tfn = profile.tfn.trim();
+    await onUpdate({
+      fullName: profile.fullName,
+      address: profile.address,
+      email: profile.email,
+      ...(tfn && /^\d{8,9}$/.test(tfn) ? { tfn } : {})
+    });
     setMessage("Profile updated");
   }
 
@@ -63,7 +69,8 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
         </label>
         <label className="label">
           TFN
-          <input className="field" inputMode="numeric" value={profile.tfn} onChange={(event) => setProfile({ ...profile, tfn: event.target.value })} required />
+          <input className="field" inputMode="numeric" value={profile.tfn} onChange={(event) => setProfile({ ...profile, tfn: event.target.value })} />
+          <span className="text-xs text-slate-500">For privacy, saved TFNs are masked. Enter a new TFN only when it needs to change.</span>
         </label>
         <button className="btn-primary" type="submit">
           <Save className="h-4 w-4" />

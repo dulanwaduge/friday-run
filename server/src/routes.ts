@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { NextFunction, Response, Router } from "express";
 import {
   endOfMonth,
   endOfWeek,
@@ -57,7 +57,7 @@ import {
   findUserById,
   listUsers,
   loginSchema,
-  profileSchema,
+  profileUpdateSchema,
   sessionTokenFromRequest,
   setSessionCookie,
   signupSchema,
@@ -69,12 +69,66 @@ import {
 
 export const router = Router();
 
+const authAttempts = new Map<string, { count: number; resetAt: number }>();
+const authWindowMs = 15 * 60 * 1000;
+const maxAuthAttempts = Number(process.env.AUTH_RATE_LIMIT_ATTEMPTS ?? 10);
+
+function isPublicSignupEnabled() {
+  return process.env.ALLOW_PUBLIC_SIGNUP === "true" || process.env.NODE_ENV !== "production";
+}
+
+function rateLimitKey(req: AuthenticatedRequest, scope: string) {
+  const ip = req.ip ?? req.socket.remoteAddress ?? "unknown";
+  const email = typeof req.body?.email === "string" ? req.body.email.toLowerCase().trim() : "";
+  const user = req.user?.id ?? "";
+  return `${scope}:${ip}:${email}:${user}`;
+}
+
+function enforceRateLimit(req: AuthenticatedRequest, res: Response, scope: string) {
+  const now = Date.now();
+  const key = rateLimitKey(req, scope);
+  const current = authAttempts.get(key);
+  if (!current || current.resetAt <= now) {
+    authAttempts.set(key, { count: 1, resetAt: now + authWindowMs });
+    return true;
+  }
+  current.count += 1;
+  if (current.count > maxAuthAttempts) {
+    const retryAfter = Math.ceil((current.resetAt - now) / 1000);
+    res.setHeader("Retry-After", String(retryAfter));
+    res.status(429).json({ error: "Too many attempts. Please try again later." });
+    return false;
+  }
+  return true;
+}
+
+function csrfGuard(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    next();
+    return;
+  }
+  if (req.header("x-fridayrun-csrf") !== "1") {
+    res.status(403).json({ error: "Missing request verification header" });
+    return;
+  }
+  next();
+}
+
 router.get("/health", (_req, res) => {
   res.json({ ok: true, service: "FridayRun API" });
 });
 
+router.get("/config/public", (_req, res) => {
+  res.json({ googleMapsApiKey: process.env.VITE_GOOGLE_MAPS_API_KEY || null });
+});
+
 router.post("/auth/signup", (req, res, next) => {
   try {
+    if (!isPublicSignupEnabled()) {
+      res.status(403).json({ error: "Public account creation is disabled" });
+      return;
+    }
+    if (!enforceRateLimit(req as AuthenticatedRequest, res, "signup")) return;
     const payload = signupSchema.parse(req.body);
     const user = createUser(payload);
     const session = createSession(user.id);
@@ -87,6 +141,7 @@ router.post("/auth/signup", (req, res, next) => {
 
 router.post("/auth/login", (req, res, next) => {
   try {
+    if (!enforceRateLimit(req as AuthenticatedRequest, res, "login")) return;
     const payload = loginSchema.parse(req.body);
     const user = findUserByEmail(payload.email);
     if (!user || !verifyPassword(payload.password, user.password_hash)) {
@@ -104,6 +159,7 @@ router.post("/auth/login", (req, res, next) => {
 router.post(
   "/auth/logout",
   authMiddleware,
+  csrfGuard,
   (req: AuthenticatedRequest, res) => {
     const token = sessionTokenFromRequest(req);
     if (token) deleteSession(token);
@@ -116,9 +172,9 @@ router.get("/me", authMiddleware, (req: AuthenticatedRequest, res) => {
   res.json(req.user);
 });
 
-router.put("/me", authMiddleware, (req: AuthenticatedRequest, res, next) => {
+router.put("/me", authMiddleware, csrfGuard, (req: AuthenticatedRequest, res, next) => {
   try {
-    const payload = profileSchema.parse(req.body);
+    const payload = profileUpdateSchema.parse(req.body);
     const user = updateUserProfile(req.user!.id, payload);
     res.json(user);
   } catch (error) {
@@ -129,8 +185,10 @@ router.put("/me", authMiddleware, (req: AuthenticatedRequest, res, next) => {
 router.put(
   "/me/password",
   authMiddleware,
+  csrfGuard,
   (req: AuthenticatedRequest, res, next) => {
     try {
+      if (!enforceRateLimit(req, res, "password")) return;
       const payload = changePasswordSchema.parse(req.body);
       const user = findUserById(req.user!.id);
       if (
@@ -152,7 +210,7 @@ router.get("/admin/users", authMiddleware, adminOnly, (_req, res) => {
   res.json(listUsers());
 });
 
-router.put("/admin/users/:id", authMiddleware, adminOnly, (req, res, next) => {
+router.put("/admin/users/:id", authMiddleware, adminOnly, csrfGuard, (req, res, next) => {
   try {
     const payload = adminUpdateUserSchema.parse(req.body);
     const userId = String(req.params.id);
@@ -167,7 +225,7 @@ router.put("/admin/users/:id", authMiddleware, adminOnly, (req, res, next) => {
   }
 });
 
-router.delete("/admin/users/:id", authMiddleware, adminOnly, (req, res) => {
+router.delete("/admin/users/:id", authMiddleware, adminOnly, csrfGuard, (req, res) => {
   const userId = String(req.params.id);
   if (userId === (req as AuthenticatedRequest).user!.id) {
     res.status(400).json({ error: "You cannot delete your own account" });
@@ -188,6 +246,7 @@ router.put(
   "/admin/settings/tax",
   authMiddleware,
   adminOnly,
+  csrfGuard,
   (req, res, next) => {
     try {
       const payload = taxSettingsSchema.parse(req.body);
@@ -203,6 +262,7 @@ router.put(
 );
 
 router.use(authMiddleware);
+router.use(csrfGuard);
 
 router.get("/entries", (req, res, next) => {
   try {
@@ -415,7 +475,13 @@ router.get("/deductions", (req, res, next) => {
 router.get("/reports/audit-package", async (req, res, next) => {
   try {
     const query = deductionQuerySchema.parse(req.query);
-    const user = (req as AuthenticatedRequest).user!;
+    const sessionUser = (req as AuthenticatedRequest).user!;
+    const userRow = findUserById(sessionUser.id);
+    if (!userRow) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    const user = toPublicUser(userRow, { includeSensitiveTfn: true });
     const summary = deductionSummary(
       user.id,
       query.financialYear,
@@ -474,7 +540,13 @@ router.get("/reports", async (req, res, next) => {
       return;
     }
 
-    const user = (req as AuthenticatedRequest).user!;
+    const sessionUser = (req as AuthenticatedRequest).user!;
+    const userRow = findUserById(sessionUser.id);
+    if (!userRow) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    const user = toPublicUser(userRow, { includeSensitiveTfn: true });
     const { entries } = listEntries({
       startDate,
       endDate,

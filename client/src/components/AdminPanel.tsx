@@ -18,7 +18,12 @@ export function AdminPanel() {
   }, []);
 
   async function updateRole(user: User, role: User["role"]) {
-    await api.updateUser(user.id, { ...user, role });
+    await api.updateUser(user.id, {
+      fullName: user.fullName,
+      address: user.address,
+      email: user.email,
+      role
+    });
     await load();
   }
 

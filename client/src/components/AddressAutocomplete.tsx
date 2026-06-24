@@ -1,6 +1,7 @@
 import { Autocomplete, useLoadScript } from "@react-google-maps/api";
 import { MapPin } from "lucide-react";
 import { useRef } from "react";
+import { usePublicConfig } from "../lib/publicConfig";
 
 type Props = {
   label?: string;
@@ -12,7 +13,17 @@ type Props = {
 const libraries: ("places")[] = ["places"];
 
 export function AddressAutocomplete({ label = "Address", value, onChange, required }: Props) {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+  const config = usePublicConfig();
+  const apiKey = config?.googleMapsApiKey;
+
+  if (config && !apiKey) {
+    return (
+      <label className="label">
+        {label}
+        <input className="field" value={value} onChange={(event) => onChange(event.target.value)} required={required} />
+      </label>
+    );
+  }
 
   if (!apiKey) {
     return (

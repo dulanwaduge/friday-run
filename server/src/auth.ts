@@ -42,11 +42,18 @@ const tfnSchema = z
   .trim()
   .regex(/^\d{8,9}$/, "TFN must be 8 or 9 digits");
 
-export const profileSchema = z.object({
+const profileBaseSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
   address: z.string().trim().min(5).max(300),
-  email: z.string().trim().email().max(180).transform((value) => value.toLowerCase()),
+  email: z.string().trim().email().max(180).transform((value) => value.toLowerCase())
+});
+
+export const profileSchema = profileBaseSchema.extend({
   tfn: tfnSchema
+});
+
+export const profileUpdateSchema = profileBaseSchema.extend({
+  tfn: tfnSchema.optional()
 });
 
 export const passwordSchema = z
@@ -67,7 +74,7 @@ export const loginSchema = z.object({
   password: z.string().min(1)
 });
 
-export const adminUpdateUserSchema = profileSchema.extend({
+export const adminUpdateUserSchema = profileUpdateSchema.extend({
   role: z.enum(["user", "super_admin"])
 });
 
@@ -76,13 +83,19 @@ export const changePasswordSchema = z.object({
   newPassword: passwordSchema
 });
 
-export function toPublicUser(row: UserRow): PublicUser {
+function maskTfn(value: string) {
+  const decrypted = decryptTfn(value);
+  if (!decrypted) return "";
+  return `•••••${decrypted.slice(-3)}`;
+}
+
+export function toPublicUser(row: UserRow, options: { includeSensitiveTfn?: boolean } = {}): PublicUser {
   return {
     id: row.id,
     fullName: row.full_name,
     address: row.address,
     email: row.email,
-    tfn: decryptTfn(row.tfn),
+    tfn: options.includeSensitiveTfn ? decryptTfn(row.tfn) : maskTfn(row.tfn),
     role: row.role,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -122,11 +135,13 @@ export function createUser(payload: z.infer<typeof signupSchema>, role: UserRole
   return toPublicUser(findUserById(id)!);
 }
 
-export function updateUserProfile(id: string, payload: z.infer<typeof profileSchema> & { role?: UserRole }) {
+export function updateUserProfile(id: string, payload: z.infer<typeof profileUpdateSchema> & { role?: UserRole }) {
   const existing = findUserByEmail(payload.email);
   if (existing && existing.id !== id) {
     throw new Error("An account already exists for this email address");
   }
+  const current = findUserById(id);
+  if (!current) return null;
   const roleSql = payload.role ? ", role = @role" : "";
   const result = db
     .prepare(
@@ -139,7 +154,7 @@ export function updateUserProfile(id: string, payload: z.infer<typeof profileSch
         ${roleSql}
       WHERE id = @id`
     )
-    .run({ id, ...payload, tfn: encryptTfn(payload.tfn) });
+    .run({ id, ...payload, tfn: payload.tfn ? encryptTfn(payload.tfn) : current.tfn });
   return result.changes ? toPublicUser(findUserById(id)!) : null;
 }
 
@@ -219,7 +234,7 @@ export function userForToken(token: string) {
 }
 
 export function listUsers() {
-  return (db.prepare("SELECT * FROM users ORDER BY created_at DESC").all() as UserRow[]).map(toPublicUser);
+  return (db.prepare("SELECT * FROM users ORDER BY created_at DESC").all() as UserRow[]).map((user) => toPublicUser(user));
 }
 
 export function deleteUser(id: string) {
