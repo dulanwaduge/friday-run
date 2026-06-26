@@ -15,15 +15,30 @@ export const entryPayloadSchema = z
     startLocation: z.string().trim().min(2).max(240),
     endLocation: z.string().trim().min(2).max(240),
     kilometres: z.coerce.number().min(0).max(2000),
-    calculatedKilometres: z.coerce.number().min(0).max(2000).optional().nullable(),
+    calculatedKilometres: z.coerce
+      .number()
+      .min(0)
+      .max(2000)
+      .optional()
+      .nullable(),
     distanceSource: z.enum(["calculated", "manual"]).default("manual"),
     notes: optionalText,
     vehicle: optionalText,
     odometerStart: z.coerce.number().min(0).optional().nullable(),
     odometerEnd: z.coerce.number().min(0).optional().nullable(),
     roundTrip: z.boolean().default(false),
-    tripCategory: z.enum(["work", "personal", "commute", "client_visit", "site_visit", "training", "supplier_visit"]).default("work"),
-    commuteReason: optionalText
+    tripCategory: z
+      .enum([
+        "work",
+        "personal",
+        "commute",
+        "client_visit",
+        "site_visit",
+        "training",
+        "supplier_visit",
+      ])
+      .default("work"),
+    commuteReason: optionalText,
   })
   .refine(
     (data) =>
@@ -32,50 +47,75 @@ export const entryPayloadSchema = z
       data.odometerEnd >= data.odometerStart,
     {
       path: ["odometerEnd"],
-      message: "Odometer end must be greater than or equal to odometer start"
-    }
+      message: "Odometer end must be greater than or equal to odometer start",
+    },
   );
 
 export const destinationSchema = z.object({
   nickname: z.string().trim().min(1).max(80),
   address: z.string().trim().min(5).max(300),
-  category: z.enum(["home", "office", "client", "supplier", "training", "job_site", "other"]),
-  notes: optionalText
+  category: z.enum([
+    "home",
+    "office",
+    "client",
+    "supplier",
+    "training",
+    "job_site",
+    "other",
+  ]),
+  notes: optionalText,
 });
 
 export const vehicleSchema = z.object({
-  rego: z.string().trim().min(1).max(20).transform((value) => value.replace(/[^a-z0-9]/gi, "").toUpperCase()).refine((value) => value.length >= 1 && value.length <= 12, {
-    message: "Rego must contain 1 to 12 letters or numbers"
-  }),
-  state: z.enum(["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"])
+  rego: z
+    .string()
+    .trim()
+    .min(1)
+    .max(20)
+    .transform((value) => value.replace(/[^a-z0-9]/gi, "").toUpperCase())
+    .refine((value) => value.length >= 1 && value.length <= 12, {
+      message: "Rego must contain 1 to 12 letters or numbers",
+    }),
+  state: z.enum(["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"]),
 });
 
 export const taxSettingsSchema = z.object({
-  centsPerKilometreRate: z.coerce.number().min(0).max(5)
+  centsPerKilometreRate: z.coerce.number().min(0).max(5),
 });
 
 export const deductionQuerySchema = z.object({
-  financialYear: z.string().regex(/^\d{4}-\d{2}$/).optional(),
-  marginalTaxRate: z.coerce.number().min(0).max(1).default(0.30)
+  financialYear: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+  marginalTaxRate: z.coerce.number().min(0).max(1).default(0.3),
 });
 
 export const rangeQuerySchema = z
   .object({
     startDate: z.string().optional(),
     endDate: z.string().optional(),
-    financialYear: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+    financialYear: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .optional(),
     search: z.string().trim().max(120).optional(),
     limit: z.coerce.number().int().min(1).max(500).default(100),
-    offset: z.coerce.number().int().min(0).default(0)
+    offset: z.coerce.number().int().min(0).default(0),
   })
   .refine((data) => !(data.startDate && data.financialYear), {
-    message: "Use either a custom date range or financialYear, not both"
+    message: "Use either a custom date range or financialYear, not both",
   });
 
 export const reportQuerySchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  financialYear: z.string().regex(/^\d{4}-\d{2}$/).optional(),
-  period: z.enum(["week", "month", "financial-year", "custom"]).default("custom"),
-  format: z.enum(["csv", "xlsx", "pdf"]).default("csv")
+  financialYear: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+  period: z
+    .enum(["week", "month", "financial-year", "custom"])
+    .default("custom"),
+  format: z.enum(["csv", "xlsx", "pdf"]).default("csv"),
 });

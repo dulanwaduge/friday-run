@@ -14,7 +14,7 @@ test("ATO report prints duplicate vehicle registrations only once", () => {
     entry("ABC-123"),
     entry("XYZ789"),
     entry("XYZ 789"),
-    entry(null)
+    entry(null),
   ]);
 
   assert.deepEqual(registrations, ["ABC123", "XYZ789"]);

@@ -15,7 +15,9 @@ const app = express();
 const port = Number(process.env.PORT ?? 3000);
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const clientDist = path.resolve(dirname, "../../client/dist");
-const allowedOrigins = (process.env.APP_ORIGIN ?? "http://localhost:5173,http://localhost:3000")
+const allowedOrigins = (
+  process.env.APP_ORIGIN ?? "http://localhost:5173,http://localhost:3000"
+)
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -27,18 +29,31 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         baseUri: ["'self'"],
-        connectSrc: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+        connectSrc: [
+          "'self'",
+          "https://maps.googleapis.com",
+          "https://maps.gstatic.com",
+        ],
         fontSrc: ["'self'", "data:"],
         formAction: ["'self'"],
         frameAncestors: ["'self'"],
-        imgSrc: ["'self'", "data:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://maps.googleapis.com",
+          "https://maps.gstatic.com",
+        ],
         objectSrc: ["'none'"],
-        scriptSrc: ["'self'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+        scriptSrc: [
+          "'self'",
+          "https://maps.googleapis.com",
+          "https://maps.gstatic.com",
+        ],
         scriptSrcAttr: ["'none'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"]
-      }
-    }
-  })
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      },
+    },
+  }),
 );
 app.use(
   cors({
@@ -49,8 +64,8 @@ app.use(
         return;
       }
       callback(new Error("Origin not allowed"));
-    }
-  })
+    },
+  }),
 );
 app.use(express.json({ limit: "1mb" }));
 app.use("/api", router);
@@ -66,14 +81,23 @@ app.get("*", (_req, res, next) => {
   next();
 });
 
-app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  if (error instanceof ZodError) {
-    res.status(400).json({ error: "Validation failed", issues: error.flatten() });
-    return;
-  }
-  const message = error instanceof Error ? error.message : "Unexpected error";
-  res.status(500).json({ error: message });
-});
+app.use(
+  (
+    error: unknown,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    if (error instanceof ZodError) {
+      res
+        .status(400)
+        .json({ error: "Validation failed", issues: error.flatten() });
+      return;
+    }
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
+  },
+);
 
 app.listen(port, () => {
   console.log(`FridayRun API listening on http://localhost:${port}`);

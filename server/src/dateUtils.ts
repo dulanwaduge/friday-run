@@ -4,7 +4,7 @@ import {
   format,
   parseISO,
   startOfMonth,
-  startOfWeek
+  startOfWeek,
 } from "date-fns";
 
 export type DateRange = {
@@ -36,7 +36,7 @@ export function financialYearRange(financialYear: string): DateRange {
   const startYear = Number(match[1]);
   return {
     startDate: `${startYear}-07-01`,
-    endDate: `${startYear + 1}-06-30`
+    endDate: `${startYear + 1}-06-30`,
   };
 }
 
@@ -46,12 +46,12 @@ export function currentSummaryRanges(now = new Date()) {
     financialYear: financialYearRange(fy),
     month: {
       startDate: format(startOfMonth(now), "yyyy-MM-dd"),
-      endDate: format(endOfMonth(now), "yyyy-MM-dd")
+      endDate: format(endOfMonth(now), "yyyy-MM-dd"),
     },
     week: {
       startDate: format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd"),
-      endDate: format(endOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd")
+      endDate: format(endOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd"),
     },
-    financialYearLabel: fy
+    financialYearLabel: fy,
   };
 }
