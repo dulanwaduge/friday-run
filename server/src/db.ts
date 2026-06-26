@@ -19,16 +19,26 @@ const resolvedPath = path.isAbsolute(databaseUrl)
 
 function assertProductionSecret(name: string) {
   const value = process.env[name];
-  if (process.env.NODE_ENV === "production" && (!value || value.length < 32 || value.startsWith("replace-with"))) {
-    throw new Error(`${name} must be set to a strong explicit value in production.`);
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!value || value.length < 32 || value.startsWith("replace-with"))
+  ) {
+    throw new Error(
+      `${name} must be set to a strong explicit value in production.`,
+    );
   }
 }
 
 if (process.env.NODE_ENV === "production") {
   assertProductionSecret("SESSION_SECRET");
   assertProductionSecret("TFN_ENCRYPTION_KEY");
-  if (!process.env.SUPER_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD === "ChangeMe123!") {
-    throw new Error("SUPER_ADMIN_PASSWORD must be set to a strong explicit value in production.");
+  if (
+    !process.env.SUPER_ADMIN_PASSWORD ||
+    process.env.SUPER_ADMIN_PASSWORD === "ChangeMe123!"
+  ) {
+    throw new Error(
+      "SUPER_ADMIN_PASSWORD must be set to a strong explicit value in production.",
+    );
   }
 }
 
@@ -114,41 +124,60 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_vehicles_user_id ON vehicles(user_id);
 `);
 
-const columns = db.prepare("PRAGMA table_info(travel_entries)").all() as { name: string }[];
+const columns = db.prepare("PRAGMA table_info(travel_entries)").all() as {
+  name: string;
+}[];
 if (!columns.some((column) => column.name === "round_trip")) {
-  db.prepare("ALTER TABLE travel_entries ADD COLUMN round_trip INTEGER NOT NULL DEFAULT 0").run();
+  db.prepare(
+    "ALTER TABLE travel_entries ADD COLUMN round_trip INTEGER NOT NULL DEFAULT 0",
+  ).run();
 }
 if (!columns.some((column) => column.name === "user_id")) {
-  db.prepare("ALTER TABLE travel_entries ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE").run();
+  db.prepare(
+    "ALTER TABLE travel_entries ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE",
+  ).run();
 }
 if (!columns.some((column) => column.name === "trip_category")) {
-  db.prepare("ALTER TABLE travel_entries ADD COLUMN trip_category TEXT NOT NULL DEFAULT 'work'").run();
+  db.prepare(
+    "ALTER TABLE travel_entries ADD COLUMN trip_category TEXT NOT NULL DEFAULT 'work'",
+  ).run();
 }
 if (!columns.some((column) => column.name === "commute_reason")) {
   db.prepare("ALTER TABLE travel_entries ADD COLUMN commute_reason TEXT").run();
 }
-db.prepare("CREATE INDEX IF NOT EXISTS idx_travel_entries_user_id ON travel_entries(user_id)").run();
-db.prepare("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('cents_per_kilometre_rate', '0.88')").run();
+db.prepare(
+  "CREATE INDEX IF NOT EXISTS idx_travel_entries_user_id ON travel_entries(user_id)",
+).run();
+db.prepare(
+  "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('cents_per_kilometre_rate', '0.88')",
+).run();
 
-const userCount = (db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number }).count;
+const userCount = (
+  db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number }
+).count;
 if (userCount === 0) {
   const adminId = crypto.randomUUID();
   const password = process.env.SUPER_ADMIN_PASSWORD ?? "ChangeMe123!";
   db.prepare(
     `INSERT INTO users (id, full_name, address, email, tfn, password_hash, role)
-     VALUES (@id, @fullName, @address, @email, @tfn, @passwordHash, 'super_admin')`
+     VALUES (@id, @fullName, @address, @email, @tfn, @passwordHash, 'super_admin')`,
   ).run({
     id: adminId,
     fullName: process.env.SUPER_ADMIN_FULL_NAME ?? "FridayRun Admin",
     address: process.env.SUPER_ADMIN_ADDRESS ?? "Update this address",
     email: (process.env.SUPER_ADMIN_EMAIL ?? "admin@example.com").toLowerCase(),
     tfn: encryptTfn(process.env.SUPER_ADMIN_TFN ?? "000000000"),
-    passwordHash: hashPassword(password)
+    passwordHash: hashPassword(password),
   });
-  db.prepare("UPDATE travel_entries SET user_id = @adminId WHERE user_id IS NULL").run({ adminId });
+  db.prepare(
+    "UPDATE travel_entries SET user_id = @adminId WHERE user_id IS NULL",
+  ).run({ adminId });
 }
 
-const tfnRows = db.prepare("SELECT id, tfn FROM users").all() as { id: string; tfn: string }[];
+const tfnRows = db.prepare("SELECT id, tfn FROM users").all() as {
+  id: string;
+  tfn: string;
+}[];
 const migrateTfn = db.prepare("UPDATE users SET tfn = @tfn WHERE id = @id");
 for (const row of tfnRows) {
   if (!isEncryptedTfn(row.tfn)) {
@@ -171,7 +200,14 @@ export type TravelEntryRow = {
   odometer_start: number | null;
   odometer_end: number | null;
   round_trip: number;
-  trip_category: "work" | "personal" | "commute" | "client_visit" | "site_visit" | "training" | "supplier_visit";
+  trip_category:
+    | "work"
+    | "personal"
+    | "commute"
+    | "client_visit"
+    | "site_visit"
+    | "training"
+    | "supplier_visit";
   commute_reason: string | null;
   created_at: string;
   updated_at: string;
@@ -217,7 +253,7 @@ export function mapEntry(row: TravelEntryRow): TravelEntry {
     tripCategory: row.trip_category,
     commuteReason: row.commute_reason,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   };
 }
 

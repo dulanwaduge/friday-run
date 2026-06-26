@@ -74,17 +74,27 @@ const authWindowMs = 15 * 60 * 1000;
 const maxAuthAttempts = Number(process.env.AUTH_RATE_LIMIT_ATTEMPTS ?? 10);
 
 function isPublicSignupEnabled() {
-  return process.env.ALLOW_PUBLIC_SIGNUP === "true" || process.env.NODE_ENV !== "production";
+  return (
+    process.env.ALLOW_PUBLIC_SIGNUP === "true" ||
+    process.env.NODE_ENV !== "production"
+  );
 }
 
 function rateLimitKey(req: AuthenticatedRequest, scope: string) {
   const ip = req.ip ?? req.socket.remoteAddress ?? "unknown";
-  const email = typeof req.body?.email === "string" ? req.body.email.toLowerCase().trim() : "";
+  const email =
+    typeof req.body?.email === "string"
+      ? req.body.email.toLowerCase().trim()
+      : "";
   const user = req.user?.id ?? "";
   return `${scope}:${ip}:${email}:${user}`;
 }
 
-function enforceRateLimit(req: AuthenticatedRequest, res: Response, scope: string) {
+function enforceRateLimit(
+  req: AuthenticatedRequest,
+  res: Response,
+  scope: string,
+) {
   const now = Date.now();
   const key = rateLimitKey(req, scope);
   const current = authAttempts.get(key);
@@ -96,13 +106,19 @@ function enforceRateLimit(req: AuthenticatedRequest, res: Response, scope: strin
   if (current.count > maxAuthAttempts) {
     const retryAfter = Math.ceil((current.resetAt - now) / 1000);
     res.setHeader("Retry-After", String(retryAfter));
-    res.status(429).json({ error: "Too many attempts. Please try again later." });
+    res
+      .status(429)
+      .json({ error: "Too many attempts. Please try again later." });
     return false;
   }
   return true;
 }
 
-function csrfGuard(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+function csrfGuard(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
     next();
     return;
@@ -172,15 +188,20 @@ router.get("/me", authMiddleware, (req: AuthenticatedRequest, res) => {
   res.json(req.user);
 });
 
-router.put("/me", authMiddleware, csrfGuard, (req: AuthenticatedRequest, res, next) => {
-  try {
-    const payload = profileUpdateSchema.parse(req.body);
-    const user = updateUserProfile(req.user!.id, payload);
-    res.json(user);
-  } catch (error) {
-    next(error);
-  }
-});
+router.put(
+  "/me",
+  authMiddleware,
+  csrfGuard,
+  (req: AuthenticatedRequest, res, next) => {
+    try {
+      const payload = profileUpdateSchema.parse(req.body);
+      const user = updateUserProfile(req.user!.id, payload);
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.put(
   "/me/password",
@@ -210,33 +231,45 @@ router.get("/admin/users", authMiddleware, adminOnly, (_req, res) => {
   res.json(listUsers());
 });
 
-router.put("/admin/users/:id", authMiddleware, adminOnly, csrfGuard, (req, res, next) => {
-  try {
-    const payload = adminUpdateUserSchema.parse(req.body);
+router.put(
+  "/admin/users/:id",
+  authMiddleware,
+  adminOnly,
+  csrfGuard,
+  (req, res, next) => {
+    try {
+      const payload = adminUpdateUserSchema.parse(req.body);
+      const userId = String(req.params.id);
+      const user = updateUserProfile(userId, payload);
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.delete(
+  "/admin/users/:id",
+  authMiddleware,
+  adminOnly,
+  csrfGuard,
+  (req, res) => {
     const userId = String(req.params.id);
-    const user = updateUserProfile(userId, payload);
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
+    if (userId === (req as AuthenticatedRequest).user!.id) {
+      res.status(400).json({ error: "You cannot delete your own account" });
       return;
     }
-    res.json(user);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/admin/users/:id", authMiddleware, adminOnly, csrfGuard, (req, res) => {
-  const userId = String(req.params.id);
-  if (userId === (req as AuthenticatedRequest).user!.id) {
-    res.status(400).json({ error: "You cannot delete your own account" });
-    return;
-  }
-  if (!deleteUser(userId)) {
-    res.status(404).json({ error: "User not found or cannot be deleted" });
-    return;
-  }
-  res.status(204).send();
-});
+    if (!deleteUser(userId)) {
+      res.status(404).json({ error: "User not found or cannot be deleted" });
+      return;
+    }
+    res.status(204).send();
+  },
+);
 
 router.get("/admin/settings/tax", authMiddleware, adminOnly, (_req, res) => {
   res.json({ centsPerKilometreRate: getCentsPerKilometreRate() });
@@ -287,13 +320,11 @@ router.post("/entries", (req, res, next) => {
       isLikelyCommute(userId, payload.startLocation, payload.endLocation) &&
       !payload.commuteReason
     ) {
-      res
-        .status(400)
-        .json({
-          error:
-            "Normal home-to-work commuting may not be deductible. Add a reason before recording this as work travel.",
-          code: "COMMUTE_REASON_REQUIRED",
-        });
+      res.status(400).json({
+        error:
+          "Normal home-to-work commuting may not be deductible. Add a reason before recording this as work travel.",
+        code: "COMMUTE_REASON_REQUIRED",
+      });
       return;
     }
     res.status(201).json(createEntry(userId, payload));
@@ -320,13 +351,11 @@ router.put("/entries/:id", (req, res, next) => {
       isLikelyCommute(userId, payload.startLocation, payload.endLocation) &&
       !payload.commuteReason
     ) {
-      res
-        .status(400)
-        .json({
-          error:
-            "Normal home-to-work commuting may not be deductible. Add a reason before recording this as work travel.",
-          code: "COMMUTE_REASON_REQUIRED",
-        });
+      res.status(400).json({
+        error:
+          "Normal home-to-work commuting may not be deductible. Add a reason before recording this as work travel.",
+        code: "COMMUTE_REASON_REQUIRED",
+      });
       return;
     }
     const entry = updateEntry(req.params.id, userId, payload);
@@ -532,11 +561,9 @@ router.get("/reports", async (req, res, next) => {
     }
 
     if (!startDate || !endDate) {
-      res
-        .status(400)
-        .json({
-          error: "startDate and endDate are required for custom reports",
-        });
+      res.status(400).json({
+        error: "startDate and endDate are required for custom reports",
+      });
       return;
     }
 

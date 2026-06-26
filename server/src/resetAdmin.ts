@@ -11,20 +11,36 @@ type ResetOptions = {
 
 function readArg(name: string) {
   const prefix = `--${name}=`;
-  return process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+  return process.argv
+    .find((arg) => arg.startsWith(prefix))
+    ?.slice(prefix.length);
 }
 
 function optionsFromEnvironment(): ResetOptions {
   const password = readArg("password") ?? process.env.SUPER_ADMIN_PASSWORD;
   if (!password) {
-    throw new Error("Provide an admin password with SUPER_ADMIN_PASSWORD or --password=...");
+    throw new Error(
+      "Provide an admin password with SUPER_ADMIN_PASSWORD or --password=...",
+    );
   }
   return {
-    fullName: readArg("full-name") ?? process.env.SUPER_ADMIN_FULL_NAME ?? "FridayRun Admin",
-    address: readArg("address") ?? process.env.SUPER_ADMIN_ADDRESS ?? "Update this address",
-    email: (readArg("email") ?? process.env.SUPER_ADMIN_EMAIL ?? "admin@example.com").trim().toLowerCase(),
+    fullName:
+      readArg("full-name") ??
+      process.env.SUPER_ADMIN_FULL_NAME ??
+      "FridayRun Admin",
+    address:
+      readArg("address") ??
+      process.env.SUPER_ADMIN_ADDRESS ??
+      "Update this address",
+    email: (
+      readArg("email") ??
+      process.env.SUPER_ADMIN_EMAIL ??
+      "admin@example.com"
+    )
+      .trim()
+      .toLowerCase(),
     tfn: readArg("tfn") ?? process.env.SUPER_ADMIN_TFN ?? "000000000",
-    password
+    password,
   };
 }
 
@@ -44,10 +60,16 @@ export function resetSuperAdmin(options = optionsFromEnvironment()) {
   assertValidOptions(options);
 
   const passwordHash = hashPassword(options.password);
-  const existingByEmail = db.prepare("SELECT id FROM users WHERE lower(email) = lower(?)").get(options.email) as { id: string } | undefined;
+  const existingByEmail = db
+    .prepare("SELECT id FROM users WHERE lower(email) = lower(?)")
+    .get(options.email) as { id: string } | undefined;
   const existingSuperAdmin = existingByEmail
     ? null
-    : db.prepare("SELECT id FROM users WHERE role = 'super_admin' ORDER BY created_at LIMIT 1").get() as { id: string } | undefined;
+    : (db
+        .prepare(
+          "SELECT id FROM users WHERE role = 'super_admin' ORDER BY created_at LIMIT 1",
+        )
+        .get() as { id: string } | undefined);
   const existing = existingByEmail ?? existingSuperAdmin;
 
   db.transaction(() => {
@@ -63,31 +85,35 @@ export function resetSuperAdmin(options = optionsFromEnvironment()) {
              password_hash = @passwordHash,
              role = 'super_admin',
              updated_at = datetime('now')
-         WHERE id = @id`
+         WHERE id = @id`,
       ).run({
         id: existing.id,
         fullName: options.fullName,
         address: options.address,
         email: options.email,
         tfn: encryptTfn(options.tfn),
-        passwordHash
+        passwordHash,
       });
       return;
     }
 
     db.prepare(
       `INSERT INTO users (id, full_name, address, email, tfn, password_hash, role)
-       VALUES (lower(hex(randomblob(16))), @fullName, @address, @email, @tfn, @passwordHash, 'super_admin')`
+       VALUES (lower(hex(randomblob(16))), @fullName, @address, @email, @tfn, @passwordHash, 'super_admin')`,
     ).run({
       fullName: options.fullName,
       address: options.address,
       email: options.email,
       tfn: encryptTfn(options.tfn),
-      passwordHash
+      passwordHash,
     });
   })();
 
-  const row = db.prepare("SELECT email, role, password_hash FROM users WHERE lower(email) = lower(?)").get(options.email) as
+  const row = db
+    .prepare(
+      "SELECT email, role, password_hash FROM users WHERE lower(email) = lower(?)",
+    )
+    .get(options.email) as
     | { email: string; role: string; password_hash: string }
     | undefined;
 
@@ -100,7 +126,11 @@ export function resetSuperAdmin(options = optionsFromEnvironment()) {
     email: row.email,
     role: row.role,
     passwordVerified: true,
-    userCount: (db.prepare("SELECT COUNT(*) AS count FROM users").get() as { count: number }).count
+    userCount: (
+      db.prepare("SELECT COUNT(*) AS count FROM users").get() as {
+        count: number;
+      }
+    ).count,
   };
 }
 
