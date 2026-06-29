@@ -1,27 +1,33 @@
 import { Autocomplete, useLoadScript } from "@react-google-maps/api";
-import { MapPin, Route } from "lucide-react";
-import { MutableRefObject, useRef, useState } from "react";
+import { MapPin } from "lucide-react";
+import { forwardRef, MutableRefObject, useImperativeHandle, useRef, useState } from "react";
 import { usePublicConfig } from "../lib/publicConfig";
 
 type Props = {
   startLocation: string;
   endLocation: string;
   roundTrip: boolean;
+  highlightedField?: "start" | "end" | null;
   onStartChange: (value: string) => void;
   onEndChange: (value: string) => void;
   onDistanceCalculated: (km: number) => void;
 };
 
+export type MapsTripPickerHandle = {
+  analyseTrip: () => void;
+};
+
 const libraries: ("places")[] = ["places"];
 
-export function MapsTripPicker({
+export const MapsTripPicker = forwardRef<MapsTripPickerHandle, Props>(function MapsTripPicker({
   startLocation,
   endLocation,
   roundTrip,
+  highlightedField,
   onStartChange,
   onEndChange,
   onDistanceCalculated
-}: Props) {
+}: Props, ref) {
   const config = usePublicConfig();
   const apiKey = config?.googleMapsApiKey;
 
@@ -39,11 +45,11 @@ export function MapsTripPicker({
         <div className="grid gap-3 md:grid-cols-2">
           <label className="label">
             Start destination
-            <input className="field w-full" placeholder="Enter start destination" value={startLocation} onChange={(event) => onStartChange(event.target.value)} required />
+            <input className={highlightedField === "start" ? "field w-full animate-ready-pulse border-gumleaf ring-4 ring-gumleaf/15" : "field w-full"} placeholder="Enter start destination" value={startLocation} onChange={(event) => onStartChange(event.target.value)} required />
           </label>
           <label className="label">
             End destination
-            <input className="field w-full" placeholder="Enter end destination" value={endLocation} onChange={(event) => onEndChange(event.target.value)} required />
+            <input className={highlightedField === "end" ? "field w-full animate-ready-pulse border-gumleaf ring-4 ring-gumleaf/15" : "field w-full"} placeholder="Enter end destination" value={endLocation} onChange={(event) => onEndChange(event.target.value)} required />
           </label>
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">Add a Google Maps key to enable autocomplete and automatic driving distance.</p>
@@ -57,22 +63,25 @@ export function MapsTripPicker({
       startLocation={startLocation}
       endLocation={endLocation}
       roundTrip={roundTrip}
+      highlightedField={highlightedField}
       onStartChange={onStartChange}
       onEndChange={onEndChange}
       onDistanceCalculated={onDistanceCalculated}
+      ref={ref}
     />
   );
-}
+});
 
-function MapsTripPickerEnabled({
+const MapsTripPickerEnabled = forwardRef<MapsTripPickerHandle, Props & { apiKey: string }>(function MapsTripPickerEnabled({
   apiKey,
   startLocation,
   endLocation,
   roundTrip,
+  highlightedField,
   onStartChange,
   onEndChange,
   onDistanceCalculated
-}: Props & { apiKey: string }) {
+}, ref) {
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: apiKey,
     libraries,
@@ -129,6 +138,10 @@ function MapsTripPickerEnabled({
     );
   }
 
+  useImperativeHandle(ref, () => ({
+    analyseTrip: calculateDistance
+  }));
+
   if (!isLoaded) {
     return <div className="surface-subtle p-4 text-sm font-medium text-slate-500 dark:text-slate-300">Loading Google address tools...</div>;
   }
@@ -147,7 +160,7 @@ function MapsTripPickerEnabled({
             onPlaceChanged={() => readPlace(startRef, onStartChange, setStartPoint)}
           >
             <input
-              className="field w-full"
+              className={highlightedField === "start" ? "field w-full animate-ready-pulse border-gumleaf ring-4 ring-gumleaf/15" : "field w-full"}
               placeholder="Search start destination"
               value={startLocation}
               onChange={(event) => {
@@ -169,7 +182,7 @@ function MapsTripPickerEnabled({
             onPlaceChanged={() => readPlace(endRef, onEndChange, setEndPoint)}
           >
             <input
-              className="field w-full"
+              className={highlightedField === "end" ? "field w-full animate-ready-pulse border-gumleaf ring-4 ring-gumleaf/15" : "field w-full"}
               placeholder="Search end destination"
               value={endLocation}
               onChange={(event) => {
@@ -181,13 +194,7 @@ function MapsTripPickerEnabled({
           </Autocomplete>
         </label>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="min-h-5 text-sm text-slate-600 dark:text-slate-300" role="status" aria-live="polite">{status}</span>
-        <button className="btn-secondary" type="button" onClick={calculateDistance} disabled={!startLocation.trim() || !endLocation.trim()}>
-          <Route className="h-4 w-4" />
-          Calculate Distance
-        </button>
-      </div>
+      <span className="block min-h-5 text-sm font-medium text-slate-600 dark:text-slate-300" role="status" aria-live="polite">{status}</span>
     </div>
   );
-}
+});

@@ -80,7 +80,7 @@ export default function App() {
         setEditing(null);
       } else {
         const created = await api.createEntry(payload);
-        setReturnEntry(created);
+        setReturnEntry(created.roundTrip ? null : created);
         setDraft(null);
       }
       await refresh();

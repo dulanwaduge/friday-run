@@ -1,8 +1,8 @@
-import { Repeat2, Save, X } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { Route, Repeat2, Save, X } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { EntryPayload, FrequentDestination, TravelEntry, Vehicle } from "../types";
 import { today } from "../lib/dates";
-import { MapsTripPicker } from "./MapsTripPicker";
+import { MapsTripPicker, type MapsTripPickerHandle } from "./MapsTripPicker";
 import { titleCase } from "../lib/text";
 
 type Props = {
@@ -33,6 +33,7 @@ const blank: EntryPayload = {
 
 export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations = [], vehicles = [] }: Props) {
   const [form, setForm] = useState<EntryPayload>(blank);
+  const mapsTripPickerRef = useRef<MapsTripPickerHandle | null>(null);
 
   useEffect(() => {
     if (entry) {
@@ -47,6 +48,10 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
 
   const categoryFor = (address: string) => destinations.find((item) => item.address.trim().toLowerCase() === address.trim().toLowerCase())?.category;
   const likelyCommute = (categoryFor(form.startLocation) === "home" && categoryFor(form.endLocation) === "office") || (categoryFor(form.startLocation) === "office" && categoryFor(form.endLocation) === "home");
+  const hasStart = Boolean(form.startLocation.trim());
+  const hasEnd = Boolean(form.endLocation.trim());
+  const canAnalyseTrip = hasStart && hasEnd;
+  const nextStep = !hasStart ? "start" : !hasEnd ? "end" : form.calculatedKilometres == null ? "analyse" : "save";
 
   function update<K extends keyof EntryPayload>(key: K, value: EntryPayload[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -86,9 +91,11 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
       <fieldset className="space-y-4">
         <legend className="mb-3 text-base font-semibold text-ink dark:text-white">Route</legend>
         <MapsTripPicker
+          ref={mapsTripPickerRef}
           startLocation={form.startLocation}
           endLocation={form.endLocation}
           roundTrip={form.roundTrip}
+          highlightedField={nextStep === "start" || nextStep === "end" ? nextStep : null}
           onStartChange={(value) => update("startLocation", value)}
           onEndChange={(value) => update("endLocation", value)}
           onDistanceCalculated={(oneWayKm) => {
@@ -205,6 +212,27 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
           </label>
         </div>
       </details>
+      <div className={nextStep === "analyse" ? "rounded-lg border border-gumleaf/25 bg-gumleaf/10 p-4 shadow-panel ring-1 ring-gumleaf/10" : "surface-subtle p-4"}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-ink dark:text-white">
+              {canAnalyseTrip ? "Analyse this trip before saving" : "Enter the start and end destinations"}
+            </p>
+            <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+              {canAnalyseTrip ? "FridayRun will calculate the driving distance and update the kilometres field." : "The Analyse Trip button will become available once both destinations are entered."}
+            </p>
+          </div>
+          <button
+            className={nextStep === "analyse" ? "btn-primary animate-ready-pulse w-full md:w-auto" : "btn-secondary w-full md:w-auto"}
+            type="button"
+            onClick={() => mapsTripPickerRef.current?.analyseTrip()}
+            disabled={!canAnalyseTrip}
+          >
+            <Route className={nextStep === "analyse" ? "h-4 w-4 animate-route-nudge" : "h-4 w-4"} />
+            Analyse Trip
+          </button>
+        </div>
+      </div>
       <div className="flex flex-wrap justify-end gap-3">
         {onCancel ? (
           <button className="btn-secondary" type="button" onClick={onCancel}>
@@ -212,7 +240,7 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
             Cancel
           </button>
         ) : null}
-        <button className="btn-primary" type="submit" disabled={busy}>
+        <button className={nextStep === "save" ? "btn-primary animate-ready-pulse" : "btn-primary"} type="submit" disabled={busy}>
           <Save className="h-4 w-4" />
           {entry ? "Update Trip" : "Save Trip"}
         </button>
