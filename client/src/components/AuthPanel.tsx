@@ -8,9 +8,10 @@ type Props = {
   onLogin: (payload: { email: string; password: string }) => Promise<void>;
   onSignup: (payload: { fullName: string; address: string; email: string; tfn: string; password: string }) => Promise<void>;
   error: string;
+  onClearError?: () => void;
 };
 
-export function AuthPanel({ onLogin, onSignup, error }: Props) {
+export function AuthPanel({ onLogin, onSignup, error, onClearError }: Props) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
@@ -42,16 +43,17 @@ export function AuthPanel({ onLogin, onSignup, error }: Props) {
           <h1 className="text-3xl font-bold text-ink dark:text-white">FridayRun</h1>
           <p className="mt-1 text-sm text-slate-500">Australian Work Travel Recording System.</p>
         </div>
-        <form className="card space-y-4" onSubmit={submit}>
-          <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-            <button className={`h-10 flex-1 rounded-md text-sm font-semibold ${mode === "login" ? "bg-white shadow-sm dark:bg-slate-950" : ""}`} type="button" onClick={() => setMode("login")}>
+        <form className="card space-y-4" onSubmit={submit} aria-labelledby="auth-heading">
+          <h2 id="auth-heading" className="sr-only">{mode === "login" ? "Sign in to FridayRun" : "Create a FridayRun account"}</h2>
+          <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800" role="tablist" aria-label="Authentication mode">
+            <button className={`h-10 flex-1 rounded-md text-sm font-semibold ${mode === "login" ? "bg-white shadow-sm dark:bg-slate-950" : ""}`} type="button" onClick={() => { setMode("login"); onClearError?.(); }} role="tab" aria-selected={mode === "login"}>
               Sign In
             </button>
-            <button className={`h-10 flex-1 rounded-md text-sm font-semibold ${mode === "signup" ? "bg-white shadow-sm dark:bg-slate-950" : ""}`} type="button" onClick={() => setMode("signup")}>
+            <button className={`h-10 flex-1 rounded-md text-sm font-semibold ${mode === "signup" ? "bg-white shadow-sm dark:bg-slate-950" : ""}`} type="button" onClick={() => { setMode("signup"); onClearError?.(); }} role="tab" aria-selected={mode === "signup"}>
               Create Account
             </button>
           </div>
-          {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+          {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div> : null}
           {mode === "signup" ? (
             <>
               <label className="label">

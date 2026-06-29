@@ -51,6 +51,7 @@ app.use(
         ],
         scriptSrcAttr: ["'none'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        "upgrade-insecure-requests": null,
       },
     },
   }),

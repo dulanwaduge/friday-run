@@ -26,19 +26,27 @@ export function MapsTripPicker({
   const apiKey = config?.googleMapsApiKey;
 
   if (!config) {
-    return <div className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500">Loading Google address tools…</div>;
+    return <div className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-300">Loading Google address tools...</div>;
   }
 
   if (!apiKey) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
+      <div className="space-y-3 rounded-lg border border-dashed border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
           <MapPin className="h-4 w-4" />
           Manual locations
         </div>
-        <p className="mt-2 text-sm text-slate-500">
-          Add a Google Maps key to enable address autocomplete and automatic distance calculation.
-        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="label">
+            Start destination
+            <input className="field w-full" placeholder="Enter start destination" value={startLocation} onChange={(event) => onStartChange(event.target.value)} required />
+          </label>
+          <label className="label">
+            End destination
+            <input className="field w-full" placeholder="Enter end destination" value={endLocation} onChange={(event) => onEndChange(event.target.value)} required />
+          </label>
+        </div>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Add a Google Maps key to enable autocomplete and automatic driving distance.</p>
       </div>
     );
   }
@@ -122,11 +130,11 @@ function MapsTripPickerEnabled({
   }
 
   if (!isLoaded) {
-    return <div className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500">Loading Google address tools…</div>;
+    return <div className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-300">Loading Google address tools...</div>;
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
       <div className="grid gap-3 md:grid-cols-2">
         <label className="label">
           Start destination
@@ -174,7 +182,7 @@ function MapsTripPickerEnabled({
         </label>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="min-h-5 text-sm text-slate-500">{status}</span>
+        <span className="min-h-5 text-sm text-slate-600 dark:text-slate-300" role="status" aria-live="polite">{status}</span>
         <button className="btn-secondary" type="button" onClick={calculateDistance} disabled={!startLocation.trim() || !endLocation.trim()}>
           <Route className="h-4 w-4" />
           Calculate Distance
