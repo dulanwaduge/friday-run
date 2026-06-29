@@ -1,4 +1,4 @@
-import { LogOut, Moon, Plus, Search, Sun, UserCog } from "lucide-react";
+import { ClipboardList, LayoutDashboard, LogOut, Moon, Plus, Search, Shield, Sun, UserCog } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Dashboard } from "./components/Dashboard";
 import { EntriesTable } from "./components/EntriesTable";
@@ -13,13 +13,13 @@ import { ReturnTripPrompt } from "./components/ReturnTripPrompt";
 import { api } from "./lib/api";
 import type { DashboardData, EntryPayload, FrequentDestination, TravelEntry, User, Vehicle } from "./types";
 
-type View = "log" | "profile" | "admin";
+type View = "dashboard" | "log" | "records" | "profile" | "admin";
 
 export default function App() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [view, setView] = useState<View>("log");
+  const [view, setView] = useState<View>("dashboard");
   const [entries, setEntries] = useState<TravelEntry[]>([]);
   const [editing, setEditing] = useState<TravelEntry | null>(null);
   const [busy, setBusy] = useState(false);
@@ -97,7 +97,7 @@ export default function App() {
     try {
       const auth = await api.login(payload);
       setUser(auth.user);
-      setView("log");
+      setView("dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not sign in");
     }
@@ -108,7 +108,7 @@ export default function App() {
     try {
       const auth = await api.signup(payload);
       setUser(auth.user);
-      setView("log");
+      setView("dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create account");
     }
@@ -120,7 +120,7 @@ export default function App() {
     setDashboard(null);
     setEntries([]);
     setVehicles([]);
-    setView("log");
+    setView("dashboard");
   }
 
   async function remove(entry: TravelEntry) {
@@ -130,24 +130,39 @@ export default function App() {
     await refresh();
   }
 
+  function startEdit(entry: TravelEntry) {
+    setEditing(entry);
+    setView("log");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   if (!authReady) {
     return <main className="min-h-screen bg-paper p-6 text-slate-900">Loading FridayRun...</main>;
   }
 
   if (!user) {
-    return <AuthPanel onLogin={login} onSignup={signup} error={error} />;
+    return <AuthPanel onLogin={login} onSignup={signup} error={error} onClearError={() => setError("")} />;
   }
+
+  const navItems = [
+    { view: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
+    { view: "log" as const, label: editing ? "Edit trip" : "Log trip", icon: Plus },
+    { view: "records" as const, label: "Records", icon: ClipboardList },
+    { view: "profile" as const, label: "Account", icon: UserCog },
+    ...(user.role === "super_admin" ? [{ view: "admin" as const, label: "Admin", icon: Shield }] : [])
+  ];
 
   return (
     <main className="min-h-screen bg-paper text-slate-900 transition dark:bg-slate-950 dark:text-slate-100">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <header className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-normal text-ink dark:text-white">FridayRun</h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Australian Work Travel Recording System from 1 July to 30 June.</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Work travel records for the Australian financial year, 1 July to 30 June.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm dark:bg-slate-900 dark:text-slate-200">{user.fullName}</span>
+            <span className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm dark:bg-slate-900 dark:text-slate-200">{user.fullName}</span>
             <button className="icon-btn" type="button" onClick={() => setDark((value) => !value)} aria-label="Toggle Dark Mode">
               {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
@@ -157,70 +172,99 @@ export default function App() {
           </div>
         </header>
 
-        <nav className="mb-5 flex flex-wrap gap-2">
-          <button className={view === "log" ? "btn-primary" : "btn-secondary"} type="button" onClick={() => setView("log")}>
-            <Plus className="h-4 w-4" />
-            Travel Log
-          </button>
-          <button className={view === "profile" ? "btn-primary" : "btn-secondary"} type="button" onClick={() => setView("profile")}>
-            <UserCog className="h-4 w-4" />
-            Account
-          </button>
-          {user.role === "super_admin" ? (
-            <button className={view === "admin" ? "btn-primary" : "btn-secondary"} type="button" onClick={() => setView("admin")}>
-              Admin
-            </button>
-          ) : null}
+        <nav className="sticky top-0 z-20 -mx-4 mb-5 border-y border-slate-200 bg-paper/95 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95" aria-label="Primary">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:overflow-x-auto sm:pb-1">
+            {navItems.map((item) => (
+              <button
+                className={view === item.view ? "nav-item nav-item-active" : item.view === "log" ? "nav-item nav-item-primary" : "nav-item"}
+                type="button"
+                onClick={() => setView(item.view)}
+                aria-current={view === item.view ? "page" : undefined}
+                key={item.view}
+              >
+                <item.icon className="h-4 w-4 shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
         </nav>
+
+        <div id="main-content" tabIndex={-1}>
+        {view === "dashboard" ? (
+          <>
+            <section className="mb-5 rounded-lg border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-gumleaf dark:text-emerald-300">Dashboard</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-ink dark:text-white">Your tax log at a glance</h2>
+                  <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Review totals, check recent activity, or start a new trip from the same place every time.</p>
+                </div>
+                <button className="btn-primary w-full sm:w-auto" type="button" onClick={() => setView("log")}>
+                  <Plus className="h-4 w-4" />
+                  Log Trip
+                </button>
+              </div>
+            </section>
+            {dashboard ? <Dashboard data={dashboard} /> : <div className="card">Loading dashboard...</div>}
+            <div className="mt-5">
+              <TaxDeductionCalculator refreshKey={refreshKey} />
+            </div>
+          </>
+        ) : null}
 
         {view === "log" ? (
           <>
-            {dashboard ? <Dashboard data={dashboard} /> : <div className="card">Loading dashboard...</div>}
-
-            <div className="mt-5"><TaxDeductionCalculator refreshKey={refreshKey} /></div>
-
-            <div className="mt-5"><FrequentDestinations destinations={destinations} onChange={refresh} /></div>
-
-            <section className="mt-5 card">
+            <section className="card">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="panel-title">{editing ? "Edit travel entry" : "Log a trip"}</h2>
-                <div className="flex items-center gap-2 rounded-full bg-gumleaf/10 px-3 py-1 text-sm font-medium text-gumleaf">
-                  <Plus className="h-4 w-4" />
-                  Tax log
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-gumleaf dark:text-emerald-300">Trip details</p>
+                  <h2 className="panel-title">{editing ? "Edit travel entry" : "Log a trip"}</h2>
                 </div>
+                <button className="btn-secondary" type="button" onClick={() => setView("records")}>
+                  <ClipboardList className="h-4 w-4" />
+                  View Records
+                </button>
               </div>
               {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
               <EntryForm entry={editing} draft={draft} destinations={destinations} vehicles={vehicles} busy={busy} onSubmit={save} onCancel={editing ? () => setEditing(null) : undefined} />
             </section>
             {returnEntry ? <ReturnTripPrompt entry={returnEntry} onDismiss={() => setReturnEntry(null)} onCreate={async (payload) => { await save(payload); setReturnEntry(null); }} onPrepare={(payload) => { setDraft(payload); setReturnEntry(null); window.scrollTo({ top: 0, behavior: "smooth" }); }} /> : null}
-
-            <section className="mt-5 space-y-4">
-              <ReportsPanel />
-              <div className="card">
-                <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                  <h2 className="panel-title">Travel entries</h2>
-                  <div className="grid w-full gap-3 md:w-auto md:grid-cols-3">
-                    <label className="label">
-                      Search
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                        <input className="field pl-9" value={search} onChange={(event) => setSearch(event.target.value)} />
-                      </div>
-                    </label>
-                    <label className="label">
-                      From
-                      <input className="field" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
-                    </label>
-                    <label className="label">
-                      To
-                      <input className="field" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
-                    </label>
-                  </div>
-                </div>
-                <EntriesTable entries={entries} onEdit={setEditing} onDelete={remove} />
-              </div>
-            </section>
+            <div className="mt-5">
+              <FrequentDestinations destinations={destinations} onChange={refresh} />
+            </div>
           </>
+        ) : null}
+
+        {view === "records" ? (
+          <section className="space-y-5">
+            <ReportsPanel />
+            <div className="card">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-gumleaf dark:text-emerald-300">Records</p>
+                  <h2 className="panel-title">Travel entries</h2>
+                </div>
+                <div className="grid w-full gap-3 md:w-auto md:grid-cols-3">
+                  <label className="label">
+                    Search entries
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                      <input className="field pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Destination, notes, vehicle" />
+                    </div>
+                  </label>
+                  <label className="label">
+                    From
+                    <input className="field" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+                  </label>
+                  <label className="label">
+                    To
+                    <input className="field" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+                  </label>
+                </div>
+              </div>
+              <EntriesTable entries={entries} onEdit={startEdit} onDelete={remove} />
+            </div>
+          </section>
         ) : null}
 
         {view === "profile" ? (
@@ -244,6 +288,7 @@ export default function App() {
         ) : null}
 
         {view === "admin" && user.role === "super_admin" ? <AdminPanel /> : null}
+        </div>
       </div>
     </main>
   );

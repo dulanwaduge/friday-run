@@ -10,28 +10,30 @@ type Props = {
 
 export function EntriesTable({ entries, onEdit, onDelete }: Props) {
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+          <caption className="sr-only">Travel entries with route, financial year, kilometres, and actions</caption>
+          <thead className="bg-slate-50 dark:bg-slate-900">
             <tr>
-              {["Date", "Route", "Financial year", "Kilometres", "Actions"].map((heading) => (
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500" key={heading}>
+              {["Date", "Route", "Trip type", "Financial year", "Kilometres", "Actions"].map((heading) => (
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300" key={heading}>
                   {heading}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {entries.map((entry) => (
               <tr className="align-top" key={entry.id}>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-ink">{entry.date}</td>
-                <td className="px-4 py-3 text-sm text-slate-600">
-                  <div className="font-medium text-slate-900">{entry.startLocation}</div>
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-ink dark:text-white">{entry.date}</td>
+                <td className="min-w-72 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
+                  <div className="font-medium text-slate-900 dark:text-white">{entry.startLocation}</div>
                   <div>{entry.endLocation}</div>
-                  {entry.notes ? <div className="mt-1 text-xs text-slate-400">{entry.notes}</div> : null}
+                  {entry.notes ? <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{entry.notes}</div> : null}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">{entry.financialYear}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-200">{entry.roundTrip ? "Return trip" : "One-way"}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-200">{entry.financialYear}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gumleaf">{formatKm(entry.kilometres)}</td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <div className="flex gap-2">
@@ -47,7 +49,7 @@ export function EntriesTable({ entries, onEdit, onDelete }: Props) {
             ))}
             {!entries.length ? (
               <tr>
-                <td className="px-4 py-8 text-center text-sm text-slate-500" colSpan={5}>
+                <td className="px-4 py-8 text-center text-sm text-slate-600 dark:text-slate-300" colSpan={6}>
                   No entries match the current filters.
                 </td>
               </tr>

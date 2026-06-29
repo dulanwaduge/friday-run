@@ -28,12 +28,23 @@ export function ReportsPanel() {
   }
 
   return (
-    <div className="card">
+    <section className="card" aria-labelledby="reports-heading">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="panel-title">Reports</h2>
-        <div className="flex flex-wrap gap-2"><button className="btn-secondary" type="button" onClick={downloadAuditPackage}><Download className="h-4 w-4" />ATO Audit Package</button><button className="btn-primary" type="button" onClick={download}><Download className="h-4 w-4" />Download Report</button></div>
+        <div>
+          <p className="section-kicker">Exports</p>
+          <h2 id="reports-heading" className="panel-title">Reports</h2>
+        </div>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <button className="btn-secondary flex-1 sm:flex-none" type="button" onClick={downloadAuditPackage}>
+            <Download className="h-4 w-4" />
+            ATO Audit Package
+          </button>
+          <button className="btn-primary flex-1 sm:flex-none" type="button" onClick={download}>
+            <Download className="h-4 w-4" />
+            Download Report
+          </button>
+        </div>
       </div>
-      <p className="mt-3 text-xs text-slate-500">The audit package is a record-keeping aid, not tax advice, and should be reviewed by a registered tax professional.</p>
       <div className="grid gap-4 md:grid-cols-5">
         <label className="label">
           Period
@@ -70,6 +81,7 @@ export function ReportsPanel() {
           </select>
         </label>
       </div>
-    </div>
+      <p className="mt-3 text-xs text-slate-600 dark:text-slate-300">The audit package is a record-keeping aid, not tax advice, and should be reviewed by a registered tax professional.</p>
+    </section>
   );
 }
