@@ -12,22 +12,24 @@
     font-family:
       Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
       sans-serif;
-    background: #f8fafc;
+    background:
+      linear-gradient(180deg, #f7faf8 0%, #eef5f1 42%, #f8fafc 100%);
+    color: #102033;
   }
 
   :focus-visible {
-    outline: 3px solid rgba(45, 106, 79, 0.55);
+    outline: 3px solid rgba(31, 111, 85, 0.42);
     outline-offset: 2px;
   }
 }
 
 @layer components {
   .skip-link {
-    @apply fixed left-4 top-3 z-50 -translate-y-16 rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-0 dark:bg-white dark:text-ink;
+    @apply fixed left-4 top-3 z-50 -translate-y-16 rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white shadow-lift transition focus:translate-y-0 dark:bg-white dark:text-ink;
   }
 
   .card {
-    @apply rounded-lg border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-800 dark:bg-slate-900 sm:p-5;
+    @apply rounded-lg border border-white/80 bg-white/95 p-4 shadow-panel ring-1 ring-slate-200/70 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/90 dark:ring-slate-800 sm:p-5;
   }
 
   .panel-title {
@@ -35,42 +37,54 @@
   }
 
   .label {
-    @apply flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300;
+    @apply flex flex-col gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200;
   }
 
   .field {
-    @apply h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-gumleaf focus:ring-2 focus:ring-gumleaf/20 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100;
+    @apply h-11 rounded-lg border border-slate-300/80 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-gumleaf focus:ring-4 focus:ring-gumleaf/15 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-slate-600;
   }
 
   .btn-primary {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-gumleaf px-4 text-sm font-semibold text-white transition hover:bg-gumleaf/90 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-gumleaf px-4 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 hover:bg-gumleaf/90 active:translate-y-0 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none;
   }
 
   .btn-secondary {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900;
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300/80 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-gumleaf/40 hover:bg-mist/70 hover:text-ink active:translate-y-0 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900;
   }
 
   .icon-btn {
-    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900;
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300/80 bg-white text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-gumleaf/40 hover:bg-mist/70 hover:text-ink active:translate-y-0 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900;
   }
 
   .icon-btn.danger {
-    @apply text-red-600 hover:border-red-200 hover:bg-red-50;
+    @apply text-red-600 hover:border-red-200 hover:bg-red-50 dark:hover:border-red-900 dark:hover:bg-red-950/30;
   }
 
   .nav-item {
-    @apply inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 sm:w-auto;
+    @apply inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-white/80 bg-white/90 px-4 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/80 transition hover:-translate-y-0.5 hover:bg-white hover:text-ink active:translate-y-0 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:ring-slate-800 dark:hover:bg-slate-900 sm:w-auto;
   }
 
   .nav-item-active {
-    @apply border-gumleaf bg-gumleaf text-white hover:bg-gumleaf/90 dark:border-gumleaf dark:bg-gumleaf dark:text-white;
+    @apply border-gumleaf bg-gumleaf text-white shadow-lift ring-gumleaf/30 hover:bg-gumleaf/95 hover:text-white dark:border-gumleaf dark:bg-gumleaf dark:text-white;
   }
 
   .nav-item-primary {
-    @apply border-gumleaf/30 bg-gumleaf/10 text-gumleaf hover:bg-gumleaf/15 dark:border-gumleaf/50 dark:bg-gumleaf/20 dark:text-emerald-200;
+    @apply border-gumleaf/25 bg-gumleaf/10 text-gumleaf ring-gumleaf/15 hover:bg-gumleaf/15 dark:border-gumleaf/50 dark:bg-gumleaf/20 dark:text-emerald-200;
   }
 
   .section-kicker {
-    @apply text-sm font-semibold uppercase tracking-wide text-gumleaf dark:text-emerald-300;
+    @apply text-xs font-bold uppercase tracking-[0.16em] text-gumleaf dark:text-emerald-300;
+  }
+
+  .surface-subtle {
+    @apply rounded-lg border border-slate-200/80 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/60;
+  }
+
+  .metric-tile {
+    @apply rounded-lg border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50;
+  }
+
+  .table-shell {
+    @apply overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950;
   }
 }

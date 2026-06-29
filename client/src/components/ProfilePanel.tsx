@@ -57,7 +57,7 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
     <div className="grid gap-5 xl:grid-cols-2">
       <form className="card space-y-4" onSubmit={saveProfile}>
         <h2 className="panel-title">Account details</h2>
-        {message ? <div className="rounded-lg bg-gumleaf/10 px-4 py-3 text-sm font-medium text-gumleaf">{message}</div> : null}
+        {message ? <div className="rounded-lg border border-gumleaf/20 bg-gumleaf/10 px-4 py-3 text-sm font-semibold text-gumleaf dark:border-gumleaf/40 dark:bg-gumleaf/20 dark:text-emerald-200">{message}</div> : null}
         <label className="label">
           Full name
           <input className="field" value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} required />
@@ -70,7 +70,7 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
         <label className="label">
           TFN
           <input className="field" inputMode="numeric" value={profile.tfn} onChange={(event) => setProfile({ ...profile, tfn: event.target.value })} />
-          <span className="text-xs text-slate-500">For privacy, saved TFNs are masked. Enter a new TFN only when it needs to change.</span>
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">For privacy, saved TFNs are masked. Enter a new TFN only when it needs to change.</span>
         </label>
         <button className="btn-primary" type="submit">
           <Save className="h-4 w-4" />
@@ -87,7 +87,7 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
           New password
           <input className="field" type="password" value={passwords.newPassword} onChange={(event) => setPasswords({ ...passwords, newPassword: event.target.value })} required />
         </label>
-        <p className="text-sm text-slate-500">Use at least 12 characters with uppercase, lowercase, number, and symbol characters.</p>
+        <p className="rounded-lg bg-mist/70 px-3 py-2 text-sm font-medium text-slate-700 dark:bg-slate-950 dark:text-slate-300">Use at least 12 characters with uppercase, lowercase, number, and symbol characters.</p>
         <button className="btn-secondary" type="submit">
           <KeyRound className="h-4 w-4" />
           Change Password
@@ -97,9 +97,9 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="panel-title">Vehicles</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Add vehicles once, then select the rego from the trip form.</p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Add vehicles once, then select the rego from the trip form.</p>
           </div>
-          <Car className="h-5 w-5 text-gumleaf" />
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gumleaf/10 text-gumleaf ring-1 ring-gumleaf/15"><Car className="h-5 w-5" /></span>
         </div>
         <form className="grid gap-3 md:grid-cols-[1fr_180px_auto]" onSubmit={saveVehicle}>
           <label className="label">
@@ -118,9 +118,9 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
           </button>
         </form>
         {vehicles.length ? (
-          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="table-shell">
             <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+              <thead className="bg-mist/70 text-left text-xs uppercase tracking-wide text-slate-600 dark:bg-slate-900 dark:text-slate-300">
                 <tr>
                   <th className="px-4 py-3">Rego</th>
                   <th className="px-4 py-3">State</th>
@@ -129,7 +129,7 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {vehicles.map((item) => (
-                  <tr key={item.id}>
+                  <tr className="transition hover:bg-slate-50/80 dark:hover:bg-slate-900/60" key={item.id}>
                     <td className="px-4 py-3 font-semibold">{item.rego}</td>
                     <td className="px-4 py-3">{item.state}</td>
                     <td className="px-4 py-3 text-right">
@@ -144,7 +144,7 @@ export function ProfilePanel({ user, vehicles, onUpdate, onPassword, onCreateVeh
             </table>
           </div>
         ) : (
-          <p className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">No vehicles added yet.</p>
+          <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50/70 p-4 text-sm font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">No vehicles added yet.</p>
         )}
       </section>
     </div>

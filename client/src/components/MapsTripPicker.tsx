@@ -26,12 +26,12 @@ export function MapsTripPicker({
   const apiKey = config?.googleMapsApiKey;
 
   if (!config) {
-    return <div className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-300">Loading Google address tools...</div>;
+    return <div className="surface-subtle p-4 text-sm font-medium text-slate-500 dark:text-slate-300">Loading Google address tools...</div>;
   }
 
   if (!apiKey) {
     return (
-      <div className="space-y-3 rounded-lg border border-dashed border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
+      <div className="space-y-3 rounded-lg border border-dashed border-slate-300 bg-slate-50/80 p-4 shadow-inner dark:border-slate-700 dark:bg-slate-950">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
           <MapPin className="h-4 w-4" />
           Manual locations
@@ -130,11 +130,11 @@ function MapsTripPickerEnabled({
   }
 
   if (!isLoaded) {
-    return <div className="rounded-lg bg-slate-100 p-4 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-300">Loading Google address tools...</div>;
+    return <div className="surface-subtle p-4 text-sm font-medium text-slate-500 dark:text-slate-300">Loading Google address tools...</div>;
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+    <div className="surface-subtle space-y-3 p-4">
       <div className="grid gap-3 md:grid-cols-2">
         <label className="label">
           Start destination

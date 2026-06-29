@@ -10,11 +10,11 @@ type Props = {
 
 export function EntriesTable({ entries, onEdit, onDelete }: Props) {
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+    <div className="table-shell">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <caption className="sr-only">Travel entries with route, financial year, kilometres, and actions</caption>
-          <thead className="bg-slate-50 dark:bg-slate-900">
+          <thead className="bg-mist/70 dark:bg-slate-900">
             <tr>
               {["Date", "Route", "Trip type", "Financial year", "Kilometres", "Actions"].map((heading) => (
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300" key={heading}>
@@ -25,7 +25,7 @@ export function EntriesTable({ entries, onEdit, onDelete }: Props) {
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {entries.map((entry) => (
-              <tr className="align-top" key={entry.id}>
+              <tr className="align-top transition hover:bg-slate-50/80 dark:hover:bg-slate-900/60" key={entry.id}>
                 <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-ink dark:text-white">{entry.date}</td>
                 <td className="min-w-72 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
                   <div className="font-medium text-slate-900 dark:text-white">{entry.startLocation}</div>
