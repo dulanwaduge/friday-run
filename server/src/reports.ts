@@ -29,6 +29,11 @@ function tripType(entry: TravelEntry) {
   return entry.roundTrip ? "Return trip" : "One-way";
 }
 
+function spreadsheetSafe(value: string | number | null | undefined) {
+  const text = String(value ?? "");
+  return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+}
+
 export async function buildCsv(report: ReportPayload) {
   const rows: Array<Array<string | number>> = [
     [report.title],
@@ -64,7 +69,7 @@ export async function buildCsv(report: ReportPayload) {
     .map((row) =>
       row
         .map((value) => {
-          const text = String(value ?? "");
+          const text = spreadsheetSafe(value);
           return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
         })
         .join(","),
@@ -77,12 +82,12 @@ export async function buildXlsx(report: ReportPayload) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "FridayRun";
   const sheet = workbook.addWorksheet("Travel report");
-  sheet.addRow([report.title]);
+  sheet.addRow([spreadsheetSafe(report.title)]);
   sheet.addRow([`${report.startDate} to ${report.endDate}`]);
-  sheet.addRow(["Full name", report.user.fullName]);
-  sheet.addRow(["Address", report.user.address]);
-  sheet.addRow(["Email", report.user.email]);
-  sheet.addRow(["TFN", report.user.tfn]);
+  sheet.addRow(["Full name", spreadsheetSafe(report.user.fullName)]);
+  sheet.addRow(["Address", spreadsheetSafe(report.user.address)]);
+  sheet.addRow(["Email", spreadsheetSafe(report.user.email)]);
+  sheet.addRow(["TFN", spreadsheetSafe(report.user.tfn)]);
   sheet.addRow([]);
   sheet.addRow([
     "Date",
@@ -96,12 +101,12 @@ export async function buildXlsx(report: ReportPayload) {
   for (const entry of report.entries) {
     sheet.addRow([
       entry.date,
-      entry.startLocation,
-      entry.endLocation,
+      spreadsheetSafe(entry.startLocation),
+      spreadsheetSafe(entry.endLocation),
       tripType(entry),
       entry.kilometres,
-      entry.vehicle ?? "",
-      entry.notes ?? "",
+      spreadsheetSafe(entry.vehicle),
+      spreadsheetSafe(entry.notes),
     ]);
   }
   sheet.addRow([]);

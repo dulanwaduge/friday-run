@@ -119,6 +119,8 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_travel_entries_date ON travel_entries(date);
   CREATE INDEX IF NOT EXISTS idx_travel_entries_financial_year ON travel_entries(financial_year);
+  CREATE INDEX IF NOT EXISTS idx_travel_entries_user_date ON travel_entries(user_id, date DESC, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_travel_entries_user_financial_year ON travel_entries(user_id, financial_year);
   CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_frequent_destinations_user_id ON frequent_destinations(user_id);
   CREATE INDEX IF NOT EXISTS idx_vehicles_user_id ON vehicles(user_id);
@@ -147,6 +149,12 @@ if (!columns.some((column) => column.name === "commute_reason")) {
 }
 db.prepare(
   "CREATE INDEX IF NOT EXISTS idx_travel_entries_user_id ON travel_entries(user_id)",
+).run();
+db.prepare(
+  "CREATE INDEX IF NOT EXISTS idx_travel_entries_user_date ON travel_entries(user_id, date DESC, created_at DESC)",
+).run();
+db.prepare(
+  "CREATE INDEX IF NOT EXISTS idx_travel_entries_user_financial_year ON travel_entries(user_id, financial_year)",
 ).run();
 db.prepare(
   "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('cents_per_kilometre_rate', '0.88')",
