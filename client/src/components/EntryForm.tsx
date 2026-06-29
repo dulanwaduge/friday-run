@@ -121,7 +121,7 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
         ) : null}
       </fieldset>
 
-      <fieldset className="space-y-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+      <fieldset className="space-y-4 border-t border-slate-200/80 pt-5 dark:border-slate-800">
         <legend className="sr-only">Trip summary</legend>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[180px_180px_180px_1fr]">
           <label className="label">
@@ -144,11 +144,11 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
               }}
               required
             />
-            <span id="kilometres-help" className="text-xs text-slate-500">You can override the map distance.</span>
+            <span id="kilometres-help" className="text-xs font-medium text-slate-500 dark:text-slate-400">You can override the map distance.</span>
           </label>
           <label className="label">
             Trip type
-            <span className="flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+            <span className="flex h-11 items-center gap-2 rounded-lg border border-slate-300/80 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-gumleaf/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
               <input
                 className="h-4 w-4 accent-gumleaf"
                 type="checkbox"
@@ -186,9 +186,9 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
         </div>
       </fieldset>
 
-      {likelyCommute ? <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">This looks like travel between home and a regular workplace. Normal commuting is generally not tax deductible in Australia. You may continue, but work-related treatment requires a reason.</div> : null}
+      {likelyCommute ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">This looks like travel between home and a regular workplace. Normal commuting is generally not tax deductible in Australia. You may continue, but work-related treatment requires a reason.</div> : null}
 
-      <details className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+      <details className="surface-subtle p-4">
         <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-200">Optional odometer readings and notes</summary>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <label className="label">

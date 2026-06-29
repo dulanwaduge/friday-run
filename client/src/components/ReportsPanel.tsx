@@ -45,7 +45,7 @@ export function ReportsPanel() {
           </button>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="surface-subtle grid gap-4 p-4 md:grid-cols-5">
         <label className="label">
           Period
           <select className="field" value={period} onChange={(event) => setPeriod(event.target.value)}>
@@ -81,7 +81,7 @@ export function ReportsPanel() {
           </select>
         </label>
       </div>
-      <p className="mt-3 text-xs text-slate-600 dark:text-slate-300">The audit package is a record-keeping aid, not tax advice, and should be reviewed by a registered tax professional.</p>
+      <p className="mt-3 text-xs font-medium text-slate-600 dark:text-slate-300">The audit package is a record-keeping aid, not tax advice, and should be reviewed by a registered tax professional.</p>
     </section>
   );
 }

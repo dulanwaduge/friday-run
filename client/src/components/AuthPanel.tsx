@@ -39,17 +39,17 @@ export function AuthPanel({ onLogin, onSignup, error, onClearError }: Props) {
   return (
     <main className="min-h-screen bg-paper px-4 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-xl">
-        <div className="mb-6">
+        <div className="mb-6 rounded-lg border border-white/80 bg-white/80 p-5 shadow-panel ring-1 ring-slate-200/70 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 dark:ring-slate-800">
           <h1 className="text-3xl font-bold text-ink dark:text-white">FridayRun</h1>
-          <p className="mt-1 text-sm text-slate-500">Australian Work Travel Recording System.</p>
+          <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">Australian Work Travel Recording System.</p>
         </div>
         <form className="card space-y-4" onSubmit={submit} aria-labelledby="auth-heading">
           <h2 id="auth-heading" className="sr-only">{mode === "login" ? "Sign in to FridayRun" : "Create a FridayRun account"}</h2>
-          <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800" role="tablist" aria-label="Authentication mode">
-            <button className={`h-10 flex-1 rounded-md text-sm font-semibold ${mode === "login" ? "bg-white shadow-sm dark:bg-slate-950" : ""}`} type="button" onClick={() => { setMode("login"); onClearError?.(); }} role="tab" aria-selected={mode === "login"}>
+          <div className="flex rounded-lg border border-slate-200 bg-slate-100/80 p-1 dark:border-slate-800 dark:bg-slate-950" role="tablist" aria-label="Authentication mode">
+            <button className={`h-10 flex-1 rounded-md text-sm font-semibold transition ${mode === "login" ? "bg-white text-ink shadow-sm dark:bg-slate-900 dark:text-white" : "text-slate-600 hover:text-ink dark:text-slate-300"}`} type="button" onClick={() => { setMode("login"); onClearError?.(); }} role="tab" aria-selected={mode === "login"}>
               Sign In
             </button>
-            <button className={`h-10 flex-1 rounded-md text-sm font-semibold ${mode === "signup" ? "bg-white shadow-sm dark:bg-slate-950" : ""}`} type="button" onClick={() => { setMode("signup"); onClearError?.(); }} role="tab" aria-selected={mode === "signup"}>
+            <button className={`h-10 flex-1 rounded-md text-sm font-semibold transition ${mode === "signup" ? "bg-white text-ink shadow-sm dark:bg-slate-900 dark:text-white" : "text-slate-600 hover:text-ink dark:text-slate-300"}`} type="button" onClick={() => { setMode("signup"); onClearError?.(); }} role="tab" aria-selected={mode === "signup"}>
               Create Account
             </button>
           </div>
@@ -76,7 +76,7 @@ export function AuthPanel({ onLogin, onSignup, error, onClearError }: Props) {
             <input className="field" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
           </label>
           {mode === "signup" ? (
-            <p className="text-sm text-slate-500">
+            <p className="rounded-lg bg-mist/70 px-3 py-2 text-sm font-medium text-slate-700 dark:bg-slate-950 dark:text-slate-300">
               Passwords must be at least 12 characters and include uppercase, lowercase, number, and symbol characters.
             </p>
           ) : null}
