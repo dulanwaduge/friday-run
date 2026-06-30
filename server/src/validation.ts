@@ -9,9 +9,11 @@ const optionalText = z
   .nullable()
   .transform((value) => (value ? value : null));
 
+const dateSchema = z.string().transform(normaliseDate);
+
 export const entryPayloadSchema = z
   .object({
-    date: z.string().transform(normaliseDate),
+    date: dateSchema,
     startLocation: z.string().trim().min(2).max(240),
     endLocation: z.string().trim().min(2).max(240),
     kilometres: z.coerce.number().min(0).max(2000),
@@ -93,8 +95,8 @@ export const deductionQuerySchema = z.object({
 
 export const rangeQuerySchema = z
   .object({
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
+    startDate: dateSchema.optional(),
+    endDate: dateSchema.optional(),
     financialYear: z
       .string()
       .regex(/^\d{4}-\d{2}$/)
@@ -105,11 +107,15 @@ export const rangeQuerySchema = z
   })
   .refine((data) => !(data.startDate && data.financialYear), {
     message: "Use either a custom date range or financialYear, not both",
+  })
+  .refine((data) => !(data.startDate && data.endDate) || data.endDate >= data.startDate, {
+    message: "endDate must be greater than or equal to startDate",
+    path: ["endDate"],
   });
 
 export const reportQuerySchema = z.object({
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  startDate: dateSchema.optional(),
+  endDate: dateSchema.optional(),
   financialYear: z
     .string()
     .regex(/^\d{4}-\d{2}$/)
@@ -118,4 +124,7 @@ export const reportQuerySchema = z.object({
     .enum(["week", "month", "financial-year", "custom"])
     .default("custom"),
   format: z.enum(["csv", "xlsx", "pdf"]).default("csv"),
+}).refine((data) => !(data.startDate && data.endDate) || data.endDate >= data.startDate, {
+  message: "endDate must be greater than or equal to startDate",
+  path: ["endDate"],
 });

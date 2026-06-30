@@ -1,5 +1,5 @@
 import { ClipboardList, LayoutDashboard, LogOut, Moon, Plus, Search, Shield, Sun, UserCog } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Dashboard } from "./components/Dashboard";
 import { EntriesTable } from "./components/EntriesTable";
 import { EntryForm } from "./components/EntryForm";
@@ -42,13 +42,13 @@ export default function App() {
     return params.toString() ? `?${params.toString()}` : "";
   }, [endDate, search, startDate]);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const [nextDashboard, list, savedDestinations, savedVehicles] = await Promise.all([api.dashboard(), api.entries(query), api.destinations(), api.vehicles()]);
     setDashboard(nextDashboard);
     setEntries(list.entries);
     setDestinations(savedDestinations);
     setVehicles(savedVehicles);
-  }
+  }, [query]);
 
   useEffect(() => {
     api
@@ -65,7 +65,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     refresh().catch((err) => setError(err.message));
-  }, [query, user]);
+  }, [refresh, user]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -274,7 +274,10 @@ export default function App() {
               const nextUser = await api.updateMe(payload);
               setUser(nextUser);
             }}
-            onPassword={api.changePassword}
+            onPassword={async (payload) => {
+              await api.changePassword(payload);
+              await logout();
+            }}
             vehicles={vehicles}
             onCreateVehicle={async (payload) => {
               await api.createVehicle(payload);

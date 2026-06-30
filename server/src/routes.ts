@@ -52,6 +52,7 @@ import {
   createSession,
   createUser,
   deleteSession,
+  deleteUserSessions,
   deleteUser,
   findUserByEmail,
   findUserById,
@@ -220,6 +221,8 @@ router.put(
         return;
       }
       updatePassword(req.user!.id, payload.newPassword);
+      deleteUserSessions(req.user!.id);
+      clearSessionCookie(res);
       res.status(204).send();
     } catch (error) {
       next(error);

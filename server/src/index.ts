@@ -96,7 +96,12 @@ app.use(
       return;
     }
     const message = error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    if (message === "An account already exists for this email address") {
+      res.status(409).json({ error: message });
+      return;
+    }
+    console.error(error);
+    res.status(500).json({ error: "Unexpected server error" });
   },
 );
 

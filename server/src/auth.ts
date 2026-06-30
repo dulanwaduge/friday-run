@@ -214,6 +214,10 @@ export function deleteSession(token: string) {
   db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(hashToken(token));
 }
 
+export function deleteUserSessions(userId: string) {
+  db.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+}
+
 export function userForToken(token: string) {
   const row = db
     .prepare(

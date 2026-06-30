@@ -37,8 +37,21 @@ export function EntryForm({ entry, busy, onSubmit, onCancel, draft, destinations
 
   useEffect(() => {
     if (entry) {
-      const { id: _id, financialYear: _fy, createdAt: _created, updatedAt: _updated, ...payload } = entry;
-      setForm(payload);
+      setForm({
+        date: entry.date,
+        startLocation: entry.startLocation,
+        endLocation: entry.endLocation,
+        kilometres: entry.kilometres,
+        calculatedKilometres: entry.calculatedKilometres,
+        distanceSource: entry.distanceSource,
+        notes: entry.notes,
+        vehicle: entry.vehicle,
+        odometerStart: entry.odometerStart,
+        odometerEnd: entry.odometerEnd,
+        roundTrip: entry.roundTrip,
+        tripCategory: entry.tripCategory,
+        commuteReason: entry.commuteReason,
+      });
     } else if (draft) {
       setForm(draft);
     } else {
